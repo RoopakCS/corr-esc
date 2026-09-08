@@ -1,5 +1,12 @@
 others
 .agents
 .claude
+.scratch
+docs
 
 skills-lock.json
+AGENTS.md
+CONTEXT.md
+node_modules
+dist
+.env
