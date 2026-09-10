@@ -1,20 +1,61 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getAdminDashboard, clearToken, DashboardResponse } from "../services/api.js";
-import { Building, Shield, User, LogOut, CheckCircle, Clock } from "lucide-react";
+import {
+  getAdminDashboard,
+  clearToken,
+  DashboardResponse,
+  getCategories,
+  createCategory,
+  updateCategory,
+  Category,
+  CategoryPayload,
+} from "../services/api.js";
+import {
+  Building,
+  Shield,
+  User,
+  LogOut,
+  CheckCircle,
+  Clock,
+  Plus,
+  Edit2,
+  AlertCircle,
+  Layers,
+  Sliders,
+  X,
+  PlusCircle,
+  Trash2,
+} from "lucide-react";
+
+const DEFAULT_CATEGORY_FORM: CategoryPayload = {
+  name: "",
+  baseSlaHours: 24,
+  floorHours: 2,
+  contractionFactor: 0.2,
+  tierTargets: [{ tier: 1, targetRole: "Supervisor" }],
+};
 
 export function AdminDashboard() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Category Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [categoryForm, setCategoryForm] = useState<CategoryPayload>(DEFAULT_CATEGORY_FORM);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [savingCategory, setSavingCategory] = useState(false);
+
   useEffect(() => {
     if (!slug) return;
-    getAdminDashboard(slug)
-      .then((res) => {
-        setDashboard(res);
+    Promise.all([getAdminDashboard(slug), getCategories(slug)])
+      .then(([dashRes, catRes]) => {
+        setDashboard(dashRes);
+        setCategories(catRes);
         setLoading(false);
       })
       .catch((err) => {
@@ -31,6 +72,92 @@ export function AdminDashboard() {
   const handleAccessDeniedRedirect = () => {
     clearToken();
     navigate(`/org/${slug}/login`);
+  };
+
+  const openCreateModal = () => {
+    setEditingCategory(null);
+    setCategoryForm(DEFAULT_CATEGORY_FORM);
+    setModalError(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (cat: Category) => {
+    setEditingCategory(cat);
+    setCategoryForm({
+      name: cat.name,
+      baseSlaHours: cat.baseSlaHours,
+      floorHours: cat.floorHours,
+      contractionFactor: cat.contractionFactor,
+      tierTargets:
+        cat.tierTargets.length > 0
+          ? cat.tierTargets.map((t, idx) => ({
+              tier: idx + 1,
+              targetRole: t.targetRole || t.supervisorRole || "Supervisor",
+            }))
+          : [{ tier: 1, targetRole: "Supervisor" }],
+    });
+    setModalError(null);
+    setIsModalOpen(true);
+  };
+
+  const addTierTarget = () => {
+    const nextTier = (categoryForm.tierTargets?.length || 0) + 1;
+    setCategoryForm((prev) => ({
+      ...prev,
+      tierTargets: [
+        ...(prev.tierTargets || []),
+        { tier: nextTier, targetRole: `Tier ${nextTier} Supervisor` },
+      ],
+    }));
+  };
+
+  const removeTierTarget = (index: number) => {
+    setCategoryForm((prev) => {
+      const remaining = (prev.tierTargets || []).filter((_, i) => i !== index);
+      // Re-index remaining tiers sequentially
+      const reindexed = remaining.map((t, i) => ({
+        ...t,
+        tier: i + 1,
+      }));
+      return { ...prev, tierTargets: reindexed };
+    });
+  };
+
+  const handleCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!slug) return;
+    setModalError(null);
+
+    if (categoryForm.floorHours >= categoryForm.baseSlaHours) {
+      setModalError("Minimum floor hours must be less than base SLA hours");
+      return;
+    }
+
+    if (
+      categoryForm.contractionFactor <= 0 ||
+      categoryForm.contractionFactor >= 1
+    ) {
+      setModalError("Contraction factor must be between 0.01 and 0.99");
+      return;
+    }
+
+    setSavingCategory(true);
+    try {
+      if (editingCategory) {
+        const updated = await updateCategory(slug, editingCategory.id, categoryForm);
+        setCategories((prev) =>
+          prev.map((c) => (c.id === updated.id ? updated : c))
+        );
+      } else {
+        const created = await createCategory(slug, categoryForm);
+        setCategories((prev) => [...prev, created]);
+      }
+      setIsModalOpen(false);
+    } catch (err: any) {
+      setModalError(err.message || "Failed to save category");
+    } finally {
+      setSavingCategory(false);
+    }
   };
 
   if (loading) {
@@ -103,7 +230,7 @@ export function AdminDashboard() {
                 Welcome back, {dashboard.admin.name}
               </h2>
               <p className="text-sm text-slate-400 mt-1">
-                Your organization is active and configured for corroboration-driven SLA escalation.
+                Configure your problem categories and dynamic SLA contraction parameters below.
               </p>
             </div>
           </div>
@@ -131,13 +258,277 @@ export function AdminDashboard() {
 
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
             <div className="text-slate-400 text-xs font-medium uppercase tracking-wider flex items-center gap-1.5">
-              <Shield className="w-4 h-4 text-indigo-400" /> Escalation Engine Status
+              <Layers className="w-4 h-4 text-indigo-400" /> Configured Categories
             </div>
-            <div className="text-lg font-bold text-emerald-400">Ready for Setup</div>
-            <div className="text-xs text-slate-400">Ready for Ticket 02 Category & SLA configuration</div>
+            <div className="text-lg font-bold text-emerald-400">{categories.length} Categories</div>
+            <div className="text-xs text-slate-400">Driving dynamic SLA contraction</div>
           </div>
         </div>
+
+        {/* Categories Section */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Sliders className="w-5 h-5 text-indigo-400" /> Problem Categories & Dynamic SLA Configuration
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Define baseline deadlines, minimum contraction safety floors, and escalation tier targets for each domain category.
+              </p>
+            </div>
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold text-white shadow transition"
+            >
+              <Plus className="w-4 h-4" /> Add Category
+            </button>
+          </div>
+
+          {categories.length === 0 ? (
+            <div className="border border-dashed border-slate-800 rounded-xl p-8 text-center space-y-3">
+              <Layers className="w-10 h-10 text-slate-600 mx-auto" />
+              <p className="text-sm text-slate-400">No categories configured yet for this organization.</p>
+              <button
+                onClick={openCreateModal}
+                className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold underline"
+              >
+                Create your first category
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {categories.map((cat) => (
+                <div
+                  key={cat.id}
+                  className="bg-slate-950/60 border border-slate-800 hover:border-slate-700 rounded-xl p-5 space-y-4 transition flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-start justify-between">
+                      <h4 className="font-bold text-base text-white">{cat.name}</h4>
+                      <button
+                        onClick={() => openEditModal(cat)}
+                        className="text-slate-400 hover:text-indigo-400 p-1 rounded-lg transition"
+                        title="Edit Category SLA"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 mt-4 text-center">
+                      <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                        <div className="text-[10px] uppercase font-semibold text-slate-400">Base SLA</div>
+                        <div className="text-sm font-bold text-white">{cat.baseSlaHours}h</div>
+                      </div>
+                      <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                        <div className="text-[10px] uppercase font-semibold text-slate-400">Floor</div>
+                        <div className="text-sm font-bold text-emerald-400">{cat.floorHours}h</div>
+                      </div>
+                      <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                        <div className="text-[10px] uppercase font-semibold text-slate-400">Decay (α)</div>
+                        <div className="text-sm font-bold text-amber-400">{(cat.contractionFactor * 100).toFixed(0)}%</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-800/80">
+                    <div className="text-xs font-medium text-slate-400 mb-2">Escalation Tiers:</div>
+                    {cat.tierTargets && cat.tierTargets.length > 0 ? (
+                      <div className="space-y-1.5">
+                        {cat.tierTargets.map((t, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between text-xs bg-slate-900 px-2.5 py-1 rounded-md text-slate-300"
+                          >
+                            <span className="font-semibold text-indigo-400">Tier {t.tier}</span>
+                            <span>{t.supervisorRole || t.targetRole}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-500 italic">No supervisor tiers defined</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
+
+      {/* Category Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="text-lg font-bold text-white">
+                {editingCategory ? "Edit Category SLA" : "Add Problem Category"}
+              </h3>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {modalError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2 text-xs text-red-300 font-medium">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-400" />
+                <span>{modalError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCategorySubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  Category Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Electrical, Plumbing, Network"
+                  value={categoryForm.name}
+                  onChange={(e) =>
+                    setCategoryForm({ ...categoryForm, name: e.target.value })
+                  }
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                    Base SLA (Hours)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0.1}
+                    step={0.1}
+                    value={categoryForm.baseSlaHours}
+                    onChange={(e) =>
+                      setCategoryForm({
+                        ...categoryForm,
+                        baseSlaHours: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                    Floor (Hours)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0.01}
+                    step={0.01}
+                    value={categoryForm.floorHours}
+                    onChange={(e) =>
+                      setCategoryForm({
+                        ...categoryForm,
+                        floorHours: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                    Decay Factor (α)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0.01}
+                    max={0.99}
+                    step={0.01}
+                    value={categoryForm.contractionFactor}
+                    onChange={(e) =>
+                      setCategoryForm({
+                        ...categoryForm,
+                        contractionFactor: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Dynamic Escalation Tiers */}
+              <div className="pt-3 border-t border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
+                    Escalation Tiers
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addTierTarget}
+                    className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" /> Add Tier
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {categoryForm.tierTargets?.map((t, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-400 w-16">
+                        Tier {t.tier}:
+                      </span>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Supervisor / Authority Role"
+                        value={t.targetRole || t.supervisorRole || ""}
+                        onChange={(e) => {
+                          const updated = [...(categoryForm.tierTargets || [])];
+                          updated[idx] = {
+                            ...updated[idx],
+                            targetRole: e.target.value,
+                            supervisorRole: e.target.value,
+                          };
+                          setCategoryForm({ ...categoryForm, tierTargets: updated });
+                        }}
+                        className="flex-1 px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      {categoryForm.tierTargets && categoryForm.tierTargets.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeTierTarget(idx)}
+                          className="text-slate-500 hover:text-red-400 p-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingCategory}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition disabled:opacity-50"
+                >
+                  {savingCategory ? "Saving..." : editingCategory ? "Update Category" : "Save Category"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

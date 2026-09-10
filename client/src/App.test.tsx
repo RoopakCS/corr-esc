@@ -19,7 +19,7 @@ describe("Frontend Client App", () => {
     ).toBeInTheDocument();
   });
 
-  it("submits organization registration and navigates to admin dashboard", async () => {
+  it("submits organization registration and displays admin dashboard with category management", async () => {
     const mockOrgResponse = {
       organization: {
         id: "org-123",
@@ -39,12 +39,26 @@ describe("Frontend Client App", () => {
     const mockDashboardResponse = {
       organization: mockOrgResponse.organization,
       admin: {
-        userId: "admin-123",
-        organizationId: "org-123",
-        role: "Admin" as const,
-        email: "admin@saveetha.ac.in",
+        id: "admin-123",
         name: "Campus Admin",
+        email: "admin@saveetha.ac.in",
+        role: "Admin" as const,
       },
+    };
+
+    const mockCategoriesResponse = {
+      categories: [
+        {
+          id: "cat-1",
+          name: "Electrical",
+          baseSlaHours: 24,
+          floorHours: 2,
+          contractionFactor: 0.2,
+          tierTargets: [{ tier: 1, targetRole: "Supervisor" }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ],
     };
 
     vi.spyOn(global, "fetch").mockImplementation((url) => {
@@ -59,6 +73,12 @@ describe("Frontend Client App", () => {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockDashboardResponse),
+        } as Response);
+      }
+      if (urlStr.includes("/categories")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockCategoriesResponse),
         } as Response);
       }
       return Promise.reject(new Error(`Unhandled URL: ${urlStr}`));
@@ -84,6 +104,9 @@ describe("Frontend Client App", () => {
     await waitFor(() => {
       expect(screen.getByText(/Welcome back, Campus Admin/i)).toBeInTheDocument();
       expect(screen.getByText(/Organization Active/i)).toBeInTheDocument();
+      expect(screen.getByText(/Electrical/i)).toBeInTheDocument();
+      expect(screen.getByText(/Base SLA/i)).toBeInTheDocument();
+      expect(screen.getByText("24h")).toBeInTheDocument();
     });
   });
 });
