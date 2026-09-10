@@ -217,3 +217,135 @@ export async function updateCategory(
 
   return data.category;
 }
+
+export interface RegisterComplainantPayload {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface IncidentInfo {
+  id: string;
+  status: "New" | "Assigned" | "In Progress" | "Resolved" | "Closed";
+  escalationTier: number;
+  corroborationCount: number;
+  slaDeadline: string;
+}
+
+export interface Complaint {
+  id: string;
+  title: string;
+  description: string;
+  locationContext: string;
+  photoUrl?: string;
+  complainantId: string;
+  categoryId: string;
+  categoryName?: string;
+  incidentId: string;
+  incident?: IncidentInfo;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateComplaintPayload {
+  categoryId: string;
+  title: string;
+  description: string;
+  locationContext?: string;
+  photoUrl?: string;
+}
+
+export async function registerComplainant(
+  slug: string,
+  payload: RegisterComplainantPayload
+): Promise<AuthResponse> {
+  const res = await fetch(`${API_BASE}/${encodeURIComponent(slug)}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to register complainant");
+  }
+
+  if (data.token) {
+    setToken(data.token);
+  }
+
+  return data;
+}
+
+export async function submitComplaint(
+  slug: string,
+  payload: CreateComplaintPayload
+): Promise<{ complaint: Complaint; incident: IncidentInfo }> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(`${API_BASE}/${encodeURIComponent(slug)}/complaints`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to submit complaint");
+  }
+
+  return data;
+}
+
+export async function getMyComplaints(slug: string): Promise<Complaint[]> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(`${API_BASE}/${encodeURIComponent(slug)}/complaints/my`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to fetch complaints");
+  }
+
+  return data.complaints || [];
+}
+
+export async function getComplaintById(
+  slug: string,
+  id: string
+): Promise<Complaint> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(
+    `${API_BASE}/${encodeURIComponent(slug)}/complaints/${encodeURIComponent(id)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to fetch complaint details");
+  }
+
+  return data.complaint;
+}
+

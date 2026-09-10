@@ -18,8 +18,12 @@ export function Login() {
     setLoading(true);
 
     try {
-      await login(slug, email, password);
-      navigate(`/org/${slug}/admin/dashboard`);
+      const res = await login(slug, email, password);
+      if (res.user?.role === "Complainant") {
+        navigate(`/org/${slug}/portal`);
+      } else {
+        navigate(`/org/${slug}/admin/dashboard`);
+      }
     } catch (err: any) {
       setError(err.message || "Invalid credentials");
     } finally {
@@ -90,11 +94,22 @@ export function Login() {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-xs text-slate-400">
-            Need a new organization?{" "}
-            <Link to="/" className="text-indigo-400 hover:text-indigo-300 underline font-medium">
-              Create organization
-            </Link>
+          <div className="mt-6 space-y-2 text-center text-xs text-slate-400">
+            <div>
+              Filing a complaint as a complainant?{" "}
+              <Link
+                to={`/org/${slug}/register`}
+                className="text-emerald-400 hover:text-emerald-300 underline font-medium"
+              >
+                Register here
+              </Link>
+            </div>
+            <div>
+              Need a new organization?{" "}
+              <Link to="/" className="text-indigo-400 hover:text-indigo-300 underline font-medium">
+                Create organization
+              </Link>
+            </div>
           </div>
         </div>
       </div>

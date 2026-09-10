@@ -18,6 +18,12 @@ const registerOrgSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+const registerComplainantSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password required"),
@@ -78,6 +84,55 @@ orgsRouter.post("/", async (req: Request, res: Response): Promise<void> => {
   });
 });
 
+// Complainant self-registration under organization slug
+orgsRouter.post("/:slug/auth/register", requireOrgAccess, async (req: Request, res: Response): Promise<void> => {
+  const parseResult = registerComplainantSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    res.status(400).json({
+      message: "Validation failed",
+      errors: parseResult.error.format(),
+    });
+    return;
+  }
+
+  const { name, email, password } = parseResult.data;
+  const organization = req.organization;
+
+  const existingUser = await User.findOne({
+    organizationId: organization._id,
+    email: email.toLowerCase(),
+  });
+
+  if (existingUser) {
+    res.status(409).json({ message: "Email is already registered in this organization" });
+    return;
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const passwordHash = await bcrypt.hash(password, salt);
+
+  const user = await User.create({
+    organizationId: organization._id,
+    name: name.trim(),
+    email: email.toLowerCase(),
+    passwordHash,
+    role: "Complainant",
+  });
+
+  const token = createAuthToken(user);
+
+  res.status(201).json({
+    token,
+    user: {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      organizationId: organization._id.toString(),
+    },
+  });
+});
+
 // Admin / User login scoped to organization slug
 orgsRouter.post("/:slug/auth/login", requireOrgAccess, async (req: Request, res: Response): Promise<void> => {
   const parseResult = loginSchema.safeParse(req.body);
@@ -113,11 +168,11 @@ orgsRouter.post("/:slug/auth/login", requireOrgAccess, async (req: Request, res:
   res.status(200).json({
     token,
     user: {
-      id: user._id,
+      id: user._id.toString(),
       name: user.name,
       email: user.email,
       role: user.role,
-      organizationId: organization._id,
+      organizationId: organization._id.toString(),
     },
   });
 });

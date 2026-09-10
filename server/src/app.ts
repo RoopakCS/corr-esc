@@ -2,6 +2,7 @@ import express, { Express } from "express";
 import cors from "cors";
 import { orgsRouter } from "./routes/orgs.js";
 import { categoriesRouter } from "./routes/categories.js";
+import { complaintsRouter } from "./routes/complaints.js";
 
 export function createApp(): Express {
   const app = express();
@@ -12,6 +13,7 @@ export function createApp(): Express {
   // Mount Organization & Auth routes
   app.use("/api/v1/orgs", orgsRouter);
   app.use("/api/v1/orgs/:slug/categories", categoriesRouter);
+  app.use("/api/v1/orgs/:slug/complaints", complaintsRouter);
 
   return app;
 }
