@@ -547,4 +547,102 @@ export async function updateIncidentStatus(
   return data.incident;
 }
 
+export interface SuggestedCorroboration {
+  complaint: Complaint;
+  similarityScore: number;
+  sourceIncidentId: string;
+}
+
+export interface MergeResponse {
+  incident: IncidentItem;
+  complaints: Complaint[];
+}
+
+export async function getCorroborationSuggestions(
+  slug: string,
+  incidentId: string,
+  threshold?: number
+): Promise<SuggestedCorroboration[]> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const query = threshold !== undefined ? `?threshold=${threshold}` : "";
+  const res = await fetch(
+    `${API_BASE}/${encodeURIComponent(slug)}/incidents/${encodeURIComponent(incidentId)}/corroboration-suggestions${query}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to fetch corroboration suggestions");
+  }
+
+  return data.suggestions;
+}
+
+export async function getMergeCandidates(
+  slug: string,
+  incidentId: string,
+  search?: string
+): Promise<Complaint[]> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const query = search ? `?search=${encodeURIComponent(search)}` : "";
+  const res = await fetch(
+    `${API_BASE}/${encodeURIComponent(slug)}/incidents/${encodeURIComponent(incidentId)}/merge-candidates${query}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to fetch merge candidates");
+  }
+
+  return data.candidates;
+}
+
+export async function mergeComplaintIntoIncident(
+  slug: string,
+  incidentId: string,
+  complaintId: string
+): Promise<MergeResponse> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(
+    `${API_BASE}/${encodeURIComponent(slug)}/incidents/${encodeURIComponent(incidentId)}/merge`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ complaintId }),
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to merge complaint into incident");
+  }
+
+  return data;
+}
+
+
 

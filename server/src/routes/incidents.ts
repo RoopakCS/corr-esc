@@ -3,8 +3,10 @@ import { z } from "zod";
 import mongoose from "mongoose";
 import { Incident, IIncident, IncidentStatus } from "../models/Incident.js";
 import { Complaint, IComplaint } from "../models/Complaint.js";
+import { Category } from "../models/Category.js";
 import { User } from "../models/User.js";
 import { verifyAuth, requireOrgAccess } from "../middleware/auth.js";
+import { computeComplaintSimilarity } from "../services/similarity.js";
 
 export const incidentsRouter = Router({ mergeParams: true });
 
@@ -68,6 +70,42 @@ function formatComplaint(complaint: IComplaint | any) {
   };
 }
 
+const ACTIVE_INCIDENT_STATUSES: IncidentStatus[] = ["New", "Assigned", "In Progress"];
+
+async function checkCategoryPoolAccess(
+  user: { userId: string; role: string },
+  organizationId: mongoose.Types.ObjectId | string,
+  categoryId: mongoose.Types.ObjectId | string | { _id: mongoose.Types.ObjectId | string },
+  allowAssigneeId?: mongoose.Types.ObjectId | string | null
+): Promise<boolean> {
+  if (user.role === "Admin") return true;
+  if (user.role !== "Staff") return false;
+
+  const staffUser = await User.findOne({
+    _id: user.userId,
+    organizationId,
+  });
+
+  if (!staffUser) return false;
+
+  const targetCatId =
+    typeof categoryId === "object" && categoryId !== null && "_id" in categoryId
+      ? (categoryId as any)._id.toString()
+      : categoryId.toString();
+
+  const hasPoolAccess = staffUser.categoryPoolIds.some(
+    (cId) => cId.toString() === targetCatId
+  );
+
+  if (hasPoolAccess) return true;
+
+  if (allowAssigneeId && toIdString(allowAssigneeId) === user.userId) {
+    return true;
+  }
+
+  return false;
+}
+
 // GET /api/v1/orgs/:slug/incidents
 incidentsRouter.get(
   "/",
@@ -75,7 +113,7 @@ incidentsRouter.get(
   requireOrgAccess,
   async (req: Request, res: Response): Promise<void> => {
     if (req.user?.role !== "Staff" && req.user?.role !== "Admin") {
-      res.status(403).json({ message: "Staff or Admin access required to view incident queue" });
+      res.status(403).json({ message: "Staff or Admin access required to view incident pool" });
       return;
     }
 
@@ -143,21 +181,16 @@ incidentsRouter.get(
     }
 
     // If Staff, ensure category is in their assigned pool or they are assignee
-    if (req.user.role === "Staff") {
-      const staffUser = await User.findOne({
-        _id: req.user.userId,
-        organizationId: req.organization._id,
-      });
+    const hasAccess = await checkCategoryPoolAccess(
+      req.user,
+      req.organization._id,
+      incident.categoryId,
+      incident.assigneeId
+    );
 
-      const hasPoolAccess = staffUser?.categoryPoolIds.some(
-        (catId) => catId.toString() === incident.categoryId._id.toString()
-      );
-      const isAssignee = incident.assigneeId && toIdString(incident.assigneeId) === req.user.userId;
-
-      if (!hasPoolAccess && !isAssignee) {
-        res.status(403).json({ message: "Not authorized for this category pool" });
-        return;
-      }
+    if (!hasAccess) {
+      res.status(403).json({ message: "Not authorized for this category pool" });
+      return;
     }
 
     const complaints = await Complaint.find({
@@ -324,6 +357,315 @@ incidentsRouter.patch(
 
     res.status(200).json({
       incident: formatIncident(incident),
+    });
+  }
+);
+
+// GET /api/v1/orgs/:slug/incidents/:id/corroboration-suggestions
+incidentsRouter.get(
+  "/:id/corroboration-suggestions",
+  verifyAuth,
+  requireOrgAccess,
+  async (req: Request, res: Response): Promise<void> => {
+    if (req.user?.role !== "Staff" && req.user?.role !== "Admin") {
+      res.status(403).json({ message: "Staff or Admin access required" });
+      return;
+    }
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: "Invalid incident ID" });
+      return;
+    }
+
+    const incident = await Incident.findOne({
+      _id: id,
+      organizationId: req.organization._id,
+    });
+
+    if (!incident) {
+      res.status(404).json({ message: "Incident not found" });
+      return;
+    }
+
+    // Verify staff belongs to category pool
+    const hasAccess = await checkCategoryPoolAccess(
+      req.user,
+      req.organization._id,
+      incident.categoryId
+    );
+
+    if (!hasAccess) {
+      res.status(403).json({ message: "Not authorized for this category pool" });
+      return;
+    }
+
+    // Attached complaints for this parent incident
+    const attachedComplaints = await Complaint.find({
+      incidentId: incident._id,
+      organizationId: req.organization._id,
+    });
+
+    if (attachedComplaints.length === 0) {
+      res.status(200).json({ suggestions: [] });
+      return;
+    }
+
+    // Candidate complaints from other active incidents in the same category
+    const activeIncidents = await Incident.find({
+      _id: { $ne: incident._id },
+      organizationId: req.organization._id,
+      categoryId: incident.categoryId,
+      status: { $in: ACTIVE_INCIDENT_STATUSES },
+    });
+
+    const activeIncidentIds = activeIncidents.map((inc) => inc._id);
+
+    const candidateComplaints = await Complaint.find({
+      organizationId: req.organization._id,
+      categoryId: incident.categoryId,
+      incidentId: { $in: activeIncidentIds },
+    });
+
+    // Similarity threshold (default: 0.2)
+    const threshold = req.query.threshold ? parseFloat(req.query.threshold as string) : 0.2;
+
+    const suggestions: Array<{
+      complaint: any;
+      similarityScore: number;
+      sourceIncidentId: string;
+    }> = [];
+
+    for (const candidate of candidateComplaints) {
+      let maxScore = 0;
+      for (const attached of attachedComplaints) {
+        const score = computeComplaintSimilarity(attached, candidate);
+        if (score > maxScore) {
+          maxScore = score;
+        }
+      }
+
+      if (maxScore >= threshold) {
+        suggestions.push({
+          complaint: formatComplaint(candidate),
+          similarityScore: Math.round(maxScore * 100) / 100,
+          sourceIncidentId: candidate.incidentId.toString(),
+        });
+      }
+    }
+
+    // Sort descending by similarityScore
+    suggestions.sort((a, b) => b.similarityScore - a.similarityScore);
+
+    res.status(200).json({ suggestions });
+  }
+);
+
+// GET /api/v1/orgs/:slug/incidents/:id/merge-candidates
+incidentsRouter.get(
+  "/:id/merge-candidates",
+  verifyAuth,
+  requireOrgAccess,
+  async (req: Request, res: Response): Promise<void> => {
+    if (req.user?.role !== "Staff" && req.user?.role !== "Admin") {
+      res.status(403).json({ message: "Staff or Admin access required" });
+      return;
+    }
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: "Invalid incident ID" });
+      return;
+    }
+
+    const incident = await Incident.findOne({
+      _id: id,
+      organizationId: req.organization._id,
+    });
+
+    if (!incident) {
+      res.status(404).json({ message: "Incident not found" });
+      return;
+    }
+
+    const hasAccess = await checkCategoryPoolAccess(
+      req.user,
+      req.organization._id,
+      incident.categoryId
+    );
+
+    if (!hasAccess) {
+      res.status(403).json({ message: "Not authorized for this category pool" });
+      return;
+    }
+
+    const searchQuery = typeof req.query.search === "string" ? req.query.search.trim() : "";
+
+    // Find other active incidents in the same category
+    const activeIncidents = await Incident.find({
+      _id: { $ne: incident._id },
+      organizationId: req.organization._id,
+      categoryId: incident.categoryId,
+      status: { $in: ACTIVE_INCIDENT_STATUSES },
+    });
+
+    const activeIncidentIds = activeIncidents.map((inc) => inc._id);
+
+    const queryFilter: any = {
+      organizationId: req.organization._id,
+      categoryId: incident.categoryId,
+      incidentId: { $in: activeIncidentIds },
+    };
+
+    if (searchQuery) {
+      const escaped = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      queryFilter.$or = [
+        { title: { $regex: escaped, $options: "i" } },
+        { description: { $regex: escaped, $options: "i" } },
+        { locationContext: { $regex: escaped, $options: "i" } },
+      ];
+    }
+
+    const candidateComplaints = await Complaint.find(queryFilter).sort({ createdAt: -1 }).limit(20);
+
+    res.status(200).json({
+      candidates: candidateComplaints.map(formatComplaint),
+    });
+  }
+);
+
+const mergeComplaintSchema = z.object({
+  complaintId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
+    message: "Invalid complaint ID",
+  }),
+});
+
+// POST /api/v1/orgs/:slug/incidents/:id/merge
+incidentsRouter.post(
+  "/:id/merge",
+  verifyAuth,
+  requireOrgAccess,
+  async (req: Request, res: Response): Promise<void> => {
+    if (req.user?.role !== "Staff" && req.user?.role !== "Admin") {
+      res.status(403).json({ message: "Staff or Admin access required to merge incidents" });
+      return;
+    }
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: "Invalid incident ID" });
+      return;
+    }
+
+    const parseResult = mergeComplaintSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      res.status(400).json({
+        message: "Invalid merge payload",
+        errors: parseResult.error.format(),
+      });
+      return;
+    }
+
+    const { complaintId } = parseResult.data;
+
+    const incident = await Incident.findOne({
+      _id: id,
+      organizationId: req.organization._id,
+    });
+
+    if (!incident) {
+      res.status(404).json({ message: "Target incident not found" });
+      return;
+    }
+
+    if (incident.status === "Resolved" || incident.status === "Closed") {
+      res.status(400).json({ message: "Cannot merge into a resolved or closed incident" });
+      return;
+    }
+
+    // Verify staff belongs to category pool
+    const hasAccess = await checkCategoryPoolAccess(
+      req.user,
+      req.organization._id,
+      incident.categoryId
+    );
+
+    if (!hasAccess) {
+      res.status(403).json({ message: "Not authorized for this category pool" });
+      return;
+    }
+
+    const complaint = await Complaint.findOne({
+      _id: complaintId,
+      organizationId: req.organization._id,
+    });
+
+    if (!complaint) {
+      res.status(404).json({ message: "Complaint not found" });
+      return;
+    }
+
+    if (complaint.categoryId.toString() !== incident.categoryId.toString()) {
+      res.status(400).json({ message: "Cannot merge complaint from a different category" });
+      return;
+    }
+
+    if (complaint.incidentId.toString() === incident._id.toString()) {
+      res.status(400).json({ message: "Complaint is already attached to this incident" });
+      return;
+    }
+
+    const sourceIncidentId = complaint.incidentId;
+
+    // 1. Reassign complaint to target incident
+    complaint.incidentId = incident._id;
+    await complaint.save();
+
+    // 2. Increment parent corroborationCount
+    incident.corroborationCount += 1;
+
+    // 3. Dynamic SLA Contraction Calculation
+    const category = await Category.findById(incident.categoryId);
+    if (category) {
+      const now = Date.now();
+      const currentRemainingMs = Math.max(0, incident.slaDeadline.getTime() - now);
+      const floorMs = category.floorHours * 3600 * 1000;
+
+      // Contract remaining time by contractionFactor
+      const contractedRemainingMs = currentRemainingMs * (1 - category.contractionFactor);
+      const clampedRemainingMs = Math.max(contractedRemainingMs, floorMs);
+
+      if (currentRemainingMs > floorMs) {
+        incident.slaDeadline = new Date(now + clampedRemainingMs);
+      }
+    }
+
+    await incident.save();
+
+    // 4. Clean up source provisional incident if all its complaints have been merged out
+    if (sourceIncidentId && sourceIncidentId.toString() !== incident._id.toString()) {
+      const remainingInSource = await Complaint.countDocuments({
+        incidentId: sourceIncidentId,
+      });
+
+      if (remainingInSource === 0) {
+        await Incident.findByIdAndDelete(sourceIncidentId);
+      } else {
+        await Incident.findByIdAndUpdate(sourceIncidentId, {
+          corroborationCount: remainingInSource,
+        });
+      }
+    }
+
+    await incident.populate("categoryId");
+    await incident.populate("assigneeId");
+    await incident.populate("supervisorId");
+
+    const attachedComplaints = await Complaint.find({ incidentId: incident._id });
+
+    res.status(200).json({
+      incident: formatIncident(incident),
+      complaints: attachedComplaints.map(formatComplaint),
     });
   }
 );

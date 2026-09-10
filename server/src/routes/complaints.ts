@@ -5,6 +5,7 @@ import { Complaint, IComplaint } from "../models/Complaint.js";
 import { Incident, IIncident } from "../models/Incident.js";
 import { Category } from "../models/Category.js";
 import { verifyAuth, requireOrgAccess } from "../middleware/auth.js";
+import { computeComplaintSimilarity } from "../services/similarity.js";
 
 export const complaintsRouter = Router({ mergeParams: true });
 
@@ -98,6 +99,34 @@ complaintsRouter.post(
     // Dynamic baseline SLA deadline calculation
     const slaDeadline = new Date(Date.now() + category.baseSlaHours * 3600 * 1000);
 
+    // Calculate lexical token similarity score between newly submitted complaint and active open incidents in same category
+    const activeIncidents = await Incident.find({
+      organizationId: req.organization._id,
+      categoryId: category._id,
+      status: { $in: ["New", "Assigned", "In Progress"] },
+    });
+
+    let topSimilarityScore = 0;
+    let suggestedIncidentId: string | undefined;
+
+    if (activeIncidents.length > 0) {
+      const activeIds = activeIncidents.map((inc) => inc._id);
+      const existingComplaints = await Complaint.find({
+        incidentId: { $in: activeIds },
+      });
+
+      for (const existing of existingComplaints) {
+        const score = computeComplaintSimilarity(
+          { title, description, locationContext },
+          existing
+        );
+        if (score > topSimilarityScore) {
+          topSimilarityScore = score;
+          suggestedIncidentId = existing.incidentId.toString();
+        }
+      }
+    }
+
     // Create operational incident
     const incident = await Incident.create({
       organizationId: req.organization._id,
@@ -123,6 +152,8 @@ complaintsRouter.post(
     res.status(201).json({
       complaint: formatComplaint(complaint, incident, category),
       incident: formatIncident(incident),
+      similarityScore: Math.round(topSimilarityScore * 100) / 100,
+      suggestedIncidentId: topSimilarityScore >= 0.2 ? suggestedIncidentId : undefined,
     });
   }
 );

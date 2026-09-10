@@ -359,7 +359,7 @@ describe("Frontend Client App", () => {
 
     // Check staff portal loaded
     await waitFor(() => {
-      expect(screen.getByText(/Operational Incident Queue/i)).toBeInTheDocument();
+      expect(screen.getByText(/Operational Incident Pool/i)).toBeInTheDocument();
       expect(screen.getByText(/Plumbing/i)).toBeInTheDocument();
       expect(screen.getByText(/Tier 0 Responsibility/i)).toBeInTheDocument();
     });
@@ -389,6 +389,134 @@ describe("Frontend Client App", () => {
     // Status transitions to In Progress
     await waitFor(() => {
       expect(screen.getByText(/Work Currently In Progress/i)).toBeInTheDocument();
+    });
+  });
+
+  it("allows staff to view suggested corroborations and merge a candidate complaint into the incident", async () => {
+    localStorage.setItem("corr_esc_token", "mock-staff-jwt");
+    localStorage.setItem("user_role", "Staff");
+    localStorage.setItem("user_id", "staff-1");
+    window.history.pushState({}, "Staff Dashboard", "/org/saveetha-campus/staff/dashboard");
+
+    let currentIncident = {
+      id: "inc-999",
+      categoryId: "cat-plumb",
+      category: { id: "cat-plumb", name: "Plumbing", baseSlaHours: 12 },
+      status: "Assigned" as const,
+      escalationTier: 0,
+      corroborationCount: 1,
+      slaDeadline: new Date(Date.now() + 10 * 3600 * 1000).toISOString(),
+      createdAt: new Date().toISOString(),
+      assigneeId: "staff-1",
+      assignee: { id: "staff-1", name: "Ramesh Kumar", email: "ramesh@saveetha.ac.in" },
+    };
+
+    const comp1 = {
+      id: "comp-1",
+      title: "Main pipe leak",
+      description: "Severe pipe leakage in washroom",
+      locationContext: "Academic Block A, 1st Floor",
+      createdAt: new Date().toISOString(),
+      incidentId: "inc-999",
+      categoryId: "cat-plumb",
+    };
+
+    const comp2 = {
+      id: "comp-2",
+      title: "Water leaking heavily from ceiling",
+      description: "Continuous water dripping in washroom 101",
+      locationContext: "Academic Block A, 1st Floor",
+      photoUrl: "https://example.com/leak2.jpg",
+      createdAt: new Date().toISOString(),
+      incidentId: "inc-1000",
+      categoryId: "cat-plumb",
+    };
+
+    let attached = [comp1];
+
+    vi.spyOn(global, "fetch").mockImplementation((url, options) => {
+      const urlStr = url.toString();
+      const method = (options as any)?.method || "GET";
+
+      if (urlStr.endsWith("/incidents") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ incidents: [currentIncident] }),
+        } as Response);
+      }
+
+      if (urlStr.endsWith("/incidents/inc-999") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              incident: currentIncident,
+              complaints: attached,
+            }),
+        } as Response);
+      }
+
+      if (urlStr.includes("/corroboration-suggestions") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              suggestions: [
+                {
+                  complaint: comp2,
+                  similarityScore: 0.85,
+                  sourceIncidentId: "inc-1000",
+                },
+              ],
+            }),
+        } as Response);
+      }
+
+      if (urlStr.includes("/incidents/inc-999/merge") && method === "POST") {
+        currentIncident = {
+          ...currentIncident,
+          corroborationCount: 2,
+        };
+        attached = [comp1, comp2];
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              incident: currentIncident,
+              complaints: attached,
+            }),
+        } as Response);
+      }
+
+      return Promise.reject(new Error(`Unhandled URL: ${urlStr} ${method}`));
+    });
+
+    render(<App />);
+
+    // Check staff portal loaded
+    await waitFor(() => {
+      expect(screen.getByText(/Operational Incident Pool/i)).toBeInTheDocument();
+      expect(screen.getByText(/Plumbing/i)).toBeInTheDocument();
+    });
+
+    // Open details
+    fireEvent.click(screen.getByRole("button", { name: /View Details & Complaints/i }));
+
+    // Verify suggested corroborations rendered
+    await waitFor(() => {
+      expect(screen.getByText(/Suggested Corroborations/i)).toBeInTheDocument();
+      expect(screen.getByText(/85% Match/i)).toBeInTheDocument();
+      expect(screen.getByText("Water leaking heavily from ceiling")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Merge Corroboration/i })).toBeInTheDocument();
+    });
+
+    // Merge the suggested corroboration
+    fireEvent.click(screen.getByRole("button", { name: /Merge Corroboration/i }));
+
+    // Check corroboration count updated to 2 and both complaints attached
+    await waitFor(() => {
+      expect(screen.getByText(/Attached Corroborating Complaints \(2\)/i)).toBeInTheDocument();
+      expect(screen.getByText(/Corroborating complaint successfully merged/i)).toBeInTheDocument();
     });
   });
 });
