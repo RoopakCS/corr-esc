@@ -4,6 +4,7 @@ import { Login } from "./pages/Login.js";
 import { AdminDashboard } from "./pages/AdminDashboard.js";
 import { RegisterComplainant } from "./pages/RegisterComplainant.js";
 import { ComplainantPortal } from "./pages/ComplainantPortal.js";
+import { StaffPortal } from "./pages/StaffPortal.js";
 
 function OrgRedirect() {
   const { slug } = useParams<{ slug: string }>();
@@ -20,6 +21,7 @@ export function App() {
         <Route path="/org/:slug/login" element={<Login />} />
         <Route path="/org/:slug/register" element={<RegisterComplainant />} />
         <Route path="/org/:slug/portal" element={<ComplainantPortal />} />
+        <Route path="/org/:slug/staff/dashboard" element={<StaffPortal />} />
         <Route path="/org/:slug/admin/dashboard" element={<AdminDashboard />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -81,6 +81,12 @@ describe("Frontend Client App", () => {
           json: () => Promise.resolve(mockCategoriesResponse),
         } as Response);
       }
+      if (urlStr.includes("/staff")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ staff: [] }),
+        } as Response);
+      }
       return Promise.reject(new Error(`Unhandled URL: ${urlStr}`));
     });
 
@@ -267,5 +273,124 @@ describe("Frontend Client App", () => {
       expect(screen.getByText(/SLA Deadline:/i)).toBeInTheDocument();
     });
   });
+
+  it("allows staff to view assigned category queue, inspect complaints, claim incident, and transition to In Progress", async () => {
+    localStorage.setItem("corr_esc_token", "mock-staff-token");
+    window.history.pushState({}, "Staff Dashboard", "/org/saveetha-campus/staff/dashboard");
+
+    let currentIncident: any = {
+      id: "inc-999",
+      categoryId: "cat-plumbing",
+      category: {
+        id: "cat-plumbing",
+        name: "Plumbing",
+        baseSlaHours: 12,
+      },
+      status: "New",
+      escalationTier: 0,
+      corroborationCount: 2,
+      slaDeadline: new Date(Date.now() + 10 * 3600 * 1000).toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const mockComplaints: any[] = [
+      {
+        id: "comp-1",
+        title: "Main pipe leak",
+        description: "Water leaking heavily in hallway",
+        locationContext: "Academic Block A, 1st Floor",
+        photoUrl: "https://example.com/leak.png",
+        categoryId: "cat-plumbing",
+        incidentId: "inc-999",
+        createdAt: new Date().toISOString(),
+      },
+    ];
+
+    vi.spyOn(global, "fetch").mockImplementation((url, options) => {
+      const urlStr = url.toString();
+      const method = (options as any)?.method || "GET";
+
+      if (urlStr.endsWith("/incidents") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ incidents: [currentIncident] }),
+        } as Response);
+      }
+
+      if (urlStr.endsWith("/incidents/inc-999") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              incident: currentIncident,
+              complaints: mockComplaints,
+            }),
+        } as Response);
+      }
+
+      if (urlStr.includes("/incidents/inc-999/claim") && method === "PATCH") {
+        currentIncident = {
+          ...currentIncident,
+          status: "Assigned",
+          assignee: { id: "staff-1", name: "Ramesh Kumar", email: "ramesh@saveetha.ac.in" },
+        };
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ incident: currentIncident }),
+        } as Response);
+      }
+
+      if (urlStr.includes("/incidents/inc-999/status") && method === "PATCH") {
+        currentIncident = {
+          ...currentIncident,
+          status: "In Progress",
+        };
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ incident: currentIncident }),
+        } as Response);
+      }
+
+      return Promise.reject(new Error(`Unhandled URL: ${urlStr} ${method}`));
+    });
+
+    render(<App />);
+
+    // Check staff portal loaded
+    await waitFor(() => {
+      expect(screen.getByText(/Operational Incident Queue/i)).toBeInTheDocument();
+      expect(screen.getByText(/Plumbing/i)).toBeInTheDocument();
+      expect(screen.getByText(/Tier 0 Responsibility/i)).toBeInTheDocument();
+    });
+
+    // Click "View Details & Complaints"
+    fireEvent.click(screen.getByRole("button", { name: /View Details & Complaints/i }));
+
+    // Modal opens with complaint details
+    await waitFor(() => {
+      expect(screen.getByText(/Attached Corroborating Complaints/i)).toBeInTheDocument();
+      expect(screen.getByText("Main pipe leak")).toBeInTheDocument();
+      expect(screen.getByText(/Academic Block A, 1st Floor/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Claim Incident/i })).toBeInTheDocument();
+    });
+
+    // Claim the incident
+    fireEvent.click(screen.getByRole("button", { name: /Claim Incident/i }));
+
+    // Status transitions to Assigned, then button becomes "Start Work (In Progress)"
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Start Work \(In Progress\)/i })).toBeInTheDocument();
+    });
+
+    // Start work
+    fireEvent.click(screen.getByRole("button", { name: /Start Work \(In Progress\)/i }));
+
+    // Status transitions to In Progress
+    await waitFor(() => {
+      expect(screen.getByText(/Work Currently In Progress/i)).toBeInTheDocument();
+    });
+  });
 });
+
 

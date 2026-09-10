@@ -7,8 +7,11 @@ import {
   getCategories,
   createCategory,
   updateCategory,
+  getStaff,
+  createStaff,
   Category,
   CategoryPayload,
+  StaffMember,
 } from "../services/api.js";
 import {
   Building,
@@ -25,6 +28,8 @@ import {
   X,
   PlusCircle,
   Trash2,
+  Users,
+  UserPlus,
 } from "lucide-react";
 
 const DEFAULT_CATEGORY_FORM: CategoryPayload = {
@@ -40,6 +45,8 @@ export function AdminDashboard() {
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [activeTab, setActiveTab] = useState<"categories" | "staff">("categories");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,12 +57,24 @@ export function AdminDashboard() {
   const [modalError, setModalError] = useState<string | null>(null);
   const [savingCategory, setSavingCategory] = useState(false);
 
+  // Staff Modal State
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+  const [staffForm, setStaffForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    categoryPoolIds: [] as string[],
+  });
+  const [staffModalError, setStaffModalError] = useState<string | null>(null);
+  const [savingStaff, setSavingStaff] = useState(false);
+
   useEffect(() => {
     if (!slug) return;
-    Promise.all([getAdminDashboard(slug), getCategories(slug)])
-      .then(([dashRes, catRes]) => {
+    Promise.all([getAdminDashboard(slug), getCategories(slug), getStaff(slug)])
+      .then(([dashRes, catRes, staffRes]) => {
         setDashboard(dashRes);
         setCategories(catRes);
+        setStaffList(staffRes);
         setLoading(false);
       })
       .catch((err) => {
@@ -160,6 +179,41 @@ export function AdminDashboard() {
     }
   };
 
+  const handleStaffSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!slug) return;
+    setStaffModalError(null);
+    setSavingStaff(true);
+
+    try {
+      const created = await createStaff(slug, staffForm);
+      setStaffList((prev) => [...prev, created]);
+      setIsStaffModalOpen(false);
+      setStaffForm({
+        name: "",
+        email: "",
+        password: "",
+        categoryPoolIds: [],
+      });
+    } catch (err: any) {
+      setStaffModalError(err.message || "Failed to provision staff");
+    } finally {
+      setSavingStaff(false);
+    }
+  };
+
+  const toggleCategoryPool = (categoryId: string) => {
+    setStaffForm((prev) => {
+      const exists = prev.categoryPoolIds.includes(categoryId);
+      return {
+        ...prev,
+        categoryPoolIds: exists
+          ? prev.categoryPoolIds.filter((id) => id !== categoryId)
+          : [...prev.categoryPoolIds, categoryId],
+      };
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
@@ -237,7 +291,7 @@ export function AdminDashboard() {
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
             <div className="text-slate-400 text-xs font-medium uppercase tracking-wider flex items-center gap-1.5">
               <Building className="w-4 h-4 text-indigo-400" /> Organization Profile
@@ -263,97 +317,334 @@ export function AdminDashboard() {
             <div className="text-lg font-bold text-emerald-400">{categories.length} Categories</div>
             <div className="text-xs text-slate-400">Driving dynamic SLA contraction</div>
           </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
+            <div className="text-slate-400 text-xs font-medium uppercase tracking-wider flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-indigo-400" /> Active Staff
+            </div>
+            <div className="text-lg font-bold text-sky-400">{staffList.length} Staff Members</div>
+            <div className="text-xs text-slate-400">Assigned to category pools</div>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex border-b border-slate-800 space-x-6">
+          <button
+            onClick={() => setActiveTab("categories")}
+            className={`pb-3 text-sm font-semibold border-b-2 flex items-center gap-2 transition ${
+              activeTab === "categories"
+                ? "border-indigo-500 text-white"
+                : "border-transparent text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Sliders className="w-4 h-4" />
+            <span>Problem Categories ({categories.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("staff")}
+            className={`pb-3 text-sm font-semibold border-b-2 flex items-center gap-2 transition ${
+              activeTab === "staff"
+                ? "border-indigo-500 text-white"
+                : "border-transparent text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Staff & Category Pools ({staffList.length})</span>
+          </button>
         </div>
 
         {/* Categories Section */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Sliders className="w-5 h-5 text-indigo-400" /> Problem Categories & Dynamic SLA Configuration
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Define baseline deadlines, minimum contraction safety floors, and escalation tier targets for each domain category.
-              </p>
-            </div>
-            <button
-              onClick={openCreateModal}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold text-white shadow transition"
-            >
-              <Plus className="w-4 h-4" /> Add Category
-            </button>
-          </div>
-
-          {categories.length === 0 ? (
-            <div className="border border-dashed border-slate-800 rounded-xl p-8 text-center space-y-3">
-              <Layers className="w-10 h-10 text-slate-600 mx-auto" />
-              <p className="text-sm text-slate-400">No categories configured yet for this organization.</p>
+        {activeTab === "categories" && (
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Sliders className="w-5 h-5 text-indigo-400" /> Problem Categories & Dynamic SLA Configuration
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Define baseline deadlines, minimum contraction safety floors, and escalation tier targets for each domain category.
+                </p>
+              </div>
               <button
                 onClick={openCreateModal}
-                className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold underline"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold text-white shadow transition"
               >
-                Create your first category
+                <Plus className="w-4 h-4" /> Add Category
               </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {categories.map((cat) => (
-                <div
-                  key={cat.id}
-                  className="bg-slate-950/60 border border-slate-800 hover:border-slate-700 rounded-xl p-5 space-y-4 transition flex flex-col justify-between"
+
+            {categories.length === 0 ? (
+              <div className="border border-dashed border-slate-800 rounded-xl p-8 text-center space-y-3">
+                <Layers className="w-10 h-10 text-slate-600 mx-auto" />
+                <p className="text-sm text-slate-400">No categories configured yet for this organization.</p>
+                <button
+                  onClick={openCreateModal}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold underline"
                 >
-                  <div>
-                    <div className="flex items-start justify-between">
-                      <h4 className="font-bold text-base text-white">{cat.name}</h4>
-                      <button
-                        onClick={() => openEditModal(cat)}
-                        className="text-slate-400 hover:text-indigo-400 p-1 rounded-lg transition"
-                        title="Edit Category SLA"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
+                  Create your first category
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {categories.map((cat) => (
+                  <div
+                    key={cat.id}
+                    className="bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl p-5 space-y-4 transition flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between">
+                        <h4 className="font-bold text-base text-white">{cat.name}</h4>
+                        <button
+                          onClick={() => openEditModal(cat)}
+                          className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+                          title="Edit Category SLA"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-800/80 text-center">
+                        <div className="bg-slate-900/60 p-2 rounded-lg">
+                          <span className="block text-[10px] uppercase font-semibold text-slate-500">Base SLA</span>
+                          <span className="text-sm font-bold text-indigo-400">{cat.baseSlaHours}h</span>
+                        </div>
+                        <div className="bg-slate-900/60 p-2 rounded-lg">
+                          <span className="block text-[10px] uppercase font-semibold text-slate-500">Floor</span>
+                          <span className="text-sm font-bold text-amber-400">{cat.floorHours}h</span>
+                        </div>
+                        <div className="bg-slate-900/60 p-2 rounded-lg">
+                          <span className="block text-[10px] uppercase font-semibold text-slate-500">Decay (α)</span>
+                          <span className="text-sm font-bold text-emerald-400">{cat.contractionFactor}</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 mt-4 text-center">
-                      <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                        <div className="text-[10px] uppercase font-semibold text-slate-400">Base SLA</div>
-                        <div className="text-sm font-bold text-white">{cat.baseSlaHours}h</div>
-                      </div>
-                      <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                        <div className="text-[10px] uppercase font-semibold text-slate-400">Floor</div>
-                        <div className="text-sm font-bold text-emerald-400">{cat.floorHours}h</div>
-                      </div>
-                      <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                        <div className="text-[10px] uppercase font-semibold text-slate-400">Decay (α)</div>
-                        <div className="text-sm font-bold text-amber-400">{(cat.contractionFactor * 100).toFixed(0)}%</div>
-                      </div>
+                    <div className="pt-2 border-t border-slate-800/80">
+                      <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                        Escalation Authority Hierarchy
+                      </span>
+                      {cat.tierTargets && cat.tierTargets.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {cat.tierTargets.map((t, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between text-xs bg-slate-900 px-2.5 py-1 rounded-md text-slate-300"
+                            >
+                              <span className="font-semibold text-indigo-400">Tier {t.tier}</span>
+                              <span>{t.supervisorRole || t.targetRole}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-slate-500 italic">No supervisor tiers defined</div>
+                      )}
                     </div>
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-                  <div className="pt-3 border-t border-slate-800/80">
-                    <div className="text-xs font-medium text-slate-400 mb-2">Escalation Tiers:</div>
-                    {cat.tierTargets && cat.tierTargets.length > 0 ? (
-                      <div className="space-y-1.5">
-                        {cat.tierTargets.map((t, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center justify-between text-xs bg-slate-900 px-2.5 py-1 rounded-md text-slate-300"
-                          >
-                            <span className="font-semibold text-indigo-400">Tier {t.tier}</span>
-                            <span>{t.supervisorRole || t.targetRole}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-slate-500 italic">No supervisor tiers defined</div>
-                    )}
-                  </div>
-                </div>
-              ))}
+        {/* Staff Section */}
+        {activeTab === "staff" && (
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-indigo-400" /> Staff Members & Category Pools
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Provision staff accounts and assign them to category pools to route incidents.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setStaffModalError(null);
+                  setStaffForm({
+                    name: "",
+                    email: "",
+                    password: "",
+                    categoryPoolIds: [],
+                  });
+                  setIsStaffModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold text-white shadow transition"
+              >
+                <UserPlus className="w-4 h-4" /> Provision Staff
+              </button>
             </div>
-          )}
-        </div>
+
+            {staffList.length === 0 ? (
+              <div className="border border-dashed border-slate-800 rounded-xl p-8 text-center space-y-3">
+                <Users className="w-10 h-10 text-slate-600 mx-auto" />
+                <p className="text-sm text-slate-400">No staff members provisioned yet.</p>
+                <button
+                  onClick={() => setIsStaffModalOpen(true)}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold underline"
+                >
+                  Provision your first staff member
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {staffList.map((staff) => (
+                  <div
+                    key={staff.id}
+                    className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4 flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-bold text-base text-white">{staff.name}</h4>
+                          <p className="text-xs text-slate-400">{staff.email}</p>
+                        </div>
+                        <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                          {staff.role}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-800/80">
+                      <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                        Assigned Category Pools
+                      </span>
+                      {staff.categoryPools && staff.categoryPools.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {staff.categoryPools.map((pool) => (
+                            <span
+                              key={pool.id}
+                              className="text-xs px-2.5 py-1 rounded-lg bg-indigo-950/60 border border-indigo-500/30 text-indigo-300 font-medium"
+                            >
+                              {pool.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-amber-400/80 italic">No category pools assigned</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
+
+      {/* Staff Modal */}
+      {isStaffModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="text-lg font-bold text-white">Provision Staff Member</h3>
+              <button
+                onClick={() => setIsStaffModalOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {staffModalError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2 text-xs text-red-300 font-medium">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-400" />
+                <span>{staffModalError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleStaffSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Ramesh Kumar"
+                  value={staffForm.name}
+                  onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="staff@organization.com"
+                  value={staffForm.email}
+                  onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  Initial Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  placeholder="••••••••"
+                  value={staffForm.password}
+                  onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+                  Assign Category Pools
+                </label>
+                {categories.length === 0 ? (
+                  <p className="text-xs text-amber-400">
+                    No categories configured yet. Create categories first before assigning pools.
+                  </p>
+                ) : (
+                  <div className="space-y-2 border border-slate-800 rounded-xl p-3 bg-slate-950 max-h-48 overflow-y-auto">
+                    {categories.map((cat) => (
+                      <label
+                        key={cat.id}
+                        className="flex items-center space-x-3 cursor-pointer p-1.5 hover:bg-slate-900 rounded-lg text-sm text-slate-200"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={staffForm.categoryPoolIds.includes(cat.id)}
+                          onChange={() => toggleCategoryPool(cat.id)}
+                          className="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                        />
+                        <span>{cat.name} ({cat.baseSlaHours}h Base SLA)</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsStaffModalOpen(false)}
+                  className="px-4 py-2 text-sm text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingStaff}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow transition"
+                >
+                  {savingStaff ? "Provisioning..." : "Provision Staff"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Category Modal */}
       {isModalOpen && (

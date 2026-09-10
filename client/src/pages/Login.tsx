@@ -21,6 +21,8 @@ export function Login() {
       const res = await login(slug, email, password);
       if (res.user?.role === "Complainant") {
         navigate(`/org/${slug}/portal`);
+      } else if (res.user?.role === "Staff") {
+        navigate(`/org/${slug}/staff/dashboard`);
       } else {
         navigate(`/org/${slug}/admin/dashboard`);
       }

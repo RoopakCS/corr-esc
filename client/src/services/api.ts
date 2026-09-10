@@ -349,3 +349,202 @@ export async function getComplaintById(
   return data.complaint;
 }
 
+export interface StaffMember {
+  id: string;
+  name: string;
+  email: string;
+  role: "Staff";
+  categoryPoolIds: string[];
+  categoryPools: { id: string; name: string }[];
+  createdAt: string;
+}
+
+export interface CreateStaffPayload {
+  name: string;
+  email: string;
+  password: string;
+  categoryPoolIds: string[];
+}
+
+export async function getStaff(slug: string): Promise<StaffMember[]> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(`${API_BASE}/${encodeURIComponent(slug)}/staff`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to fetch staff list");
+  }
+
+  return data.staff || [];
+}
+
+export async function createStaff(
+  slug: string,
+  payload: CreateStaffPayload
+): Promise<StaffMember> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(`${API_BASE}/${encodeURIComponent(slug)}/staff`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to create staff account");
+  }
+
+  return data.user;
+}
+
+export interface IncidentItem {
+  id: string;
+  categoryId: string;
+  category?: {
+    id: string;
+    name: string;
+    baseSlaHours: number;
+  };
+  status: "New" | "Assigned" | "In Progress" | "Resolved" | "Closed";
+  escalationTier: number;
+  assigneeId?: string;
+  assignee?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  supervisorId?: string;
+  supervisor?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  corroborationCount: number;
+  slaDeadline: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getIncidents(
+  slug: string,
+  status?: string
+): Promise<IncidentItem[]> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const queryParams = status ? `?status=${encodeURIComponent(status)}` : "";
+  const res = await fetch(`${API_BASE}/${encodeURIComponent(slug)}/incidents${queryParams}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to fetch incident queue");
+  }
+
+  return data.incidents || [];
+}
+
+export async function getIncidentDetails(
+  slug: string,
+  id: string
+): Promise<{ incident: IncidentItem; complaints: Complaint[] }> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(
+    `${API_BASE}/${encodeURIComponent(slug)}/incidents/${encodeURIComponent(id)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to fetch incident details");
+  }
+
+  return data;
+}
+
+export async function claimIncident(
+  slug: string,
+  id: string
+): Promise<IncidentItem> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(
+    `${API_BASE}/${encodeURIComponent(slug)}/incidents/${encodeURIComponent(id)}/claim`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to claim incident");
+  }
+
+  return data.incident;
+}
+
+export async function updateIncidentStatus(
+  slug: string,
+  id: string,
+  status: "In Progress"
+): Promise<IncidentItem> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(
+    `${API_BASE}/${encodeURIComponent(slug)}/incidents/${encodeURIComponent(id)}/status`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to update incident status");
+  }
+
+  return data.incident;
+}
+
+

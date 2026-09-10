@@ -11,6 +11,7 @@ export interface AuthUserPayload {
   role: "Admin" | "Staff" | "Complainant";
   email: string;
   name: string;
+  categoryPoolIds?: string[];
 }
 
 declare global {
@@ -33,6 +34,9 @@ export function createAuthToken(user: IUser): string {
     role: user.role,
     email: user.email,
     name: user.name,
+    categoryPoolIds: user.categoryPoolIds
+      ? user.categoryPoolIds.map((id) => id.toString())
+      : [],
   });
 }
 
