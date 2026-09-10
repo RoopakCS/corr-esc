@@ -274,7 +274,7 @@ describe("Frontend Client App", () => {
     });
   });
 
-  it("allows staff to view assigned category queue, inspect complaints, claim incident, and transition to In Progress", async () => {
+  it("allows staff to view assigned category pool, inspect complaints, claim incident, and transition to In Progress", async () => {
     localStorage.setItem("corr_esc_token", "mock-staff-token");
     window.history.pushState({}, "Staff Dashboard", "/org/saveetha-campus/staff/dashboard");
 
@@ -517,6 +517,132 @@ describe("Frontend Client App", () => {
     await waitFor(() => {
       expect(screen.getByText(/Attached Corroborating Complaints \(2\)/i)).toBeInTheDocument();
       expect(screen.getByText(/Corroborating complaint successfully merged/i)).toBeInTheDocument();
+    });
+  });
+
+  it("renders live visual countdown timer with color warnings and SLA contraction audit timeline in incident details", async () => {
+    localStorage.setItem("corr_esc_token", "fake-token");
+    localStorage.setItem(
+      "corr_user",
+      JSON.stringify({
+        id: "staff-1",
+        email: "plumber@campus.edu",
+        role: "Staff",
+        organizationId: "org-1",
+      })
+    );
+
+    window.history.pushState({}, "Staff Portal", "/org/campus/staff/dashboard");
+
+    const now = Date.now();
+    // 10 hours total duration, 1 hour remaining (< 25% remaining -> amber warning)
+    const createdAt = new Date(now - 9 * 3600 * 1000).toISOString();
+    const slaDeadline = new Date(now + 1 * 3600 * 1000).toISOString();
+
+    const incidentWithAudit = {
+      id: "inc-audit-1",
+      categoryId: { id: "cat-1", name: "Plumbing" },
+      status: "In Progress" as const,
+      escalationTier: 0,
+      corroborationCount: 2,
+      createdAt,
+      slaDeadline,
+      updatedAt: new Date().toISOString(),
+      contractionAudit: [
+        {
+          id: "audit-1",
+          complaintId: "comp-1",
+          complaintTitle: "Basement flooding from ruptured line",
+          previousDeadline: new Date(now + 3 * 3600 * 1000).toISOString(),
+          newDeadline: new Date(now + 3 * 3600 * 1000).toISOString(),
+          contractedMs: 0,
+          corroborationCount: 1,
+          createdAt: createdAt,
+        },
+        {
+          id: "audit-2",
+          complaintId: "comp-2",
+          complaintTitle: "Heavy water leak in ground restroom",
+          previousDeadline: new Date(now + 3 * 3600 * 1000).toISOString(),
+          newDeadline: slaDeadline,
+          contractedMs: 2 * 3600 * 1000,
+          corroborationCount: 2,
+          createdAt: new Date().toISOString(),
+        },
+      ],
+    };
+
+    vi.spyOn(global, "fetch").mockImplementation((url: string | URL | Request, init?: any) => {
+      const urlStr = url.toString();
+      const method = init?.method || "GET";
+
+      if (urlStr.includes("/api/v1/orgs/campus/incidents/inc-audit-1/corroboration-suggestions")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ suggestions: [] }),
+        } as Response);
+      }
+
+      if (urlStr.includes("/api/v1/orgs/campus/incidents/inc-audit-1") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              incident: incidentWithAudit,
+              complaints: [
+                {
+                  id: "comp-1",
+                  title: "Basement flooding from ruptured line",
+                  description: "Severe flooding",
+                  locationContext: "Basement",
+                  createdAt,
+                },
+                {
+                  id: "comp-2",
+                  title: "Heavy water leak in ground restroom",
+                  description: "Water on floor",
+                  locationContext: "Ground Floor",
+                  createdAt: new Date().toISOString(),
+                },
+              ],
+            }),
+        } as Response);
+      }
+
+      if (urlStr.includes("/api/v1/orgs/campus/incidents") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ incidents: [incidentWithAudit] }),
+        } as Response);
+      }
+
+      return Promise.reject(new Error(`Unhandled URL: ${urlStr} ${method}`));
+    });
+
+    render(<App />);
+
+    // 1. Check countdown timer renders on the incident card with warning severity (< 25% remaining)
+    await waitFor(() => {
+      expect(screen.getByText(/Operational Incident Pool/i)).toBeInTheDocument();
+      const timer = screen.getByTestId("countdown-timer");
+      expect(timer).toBeInTheDocument();
+      expect(timer).toHaveAttribute("data-severity", "warning");
+      expect(screen.getByText(/< 25% Time Remaining/i)).toBeInTheDocument();
+    });
+
+    // 2. Open incident details modal
+    fireEvent.click(screen.getByRole("button", { name: /View Details & Complaints/i }));
+
+    // 3. Verify SLA Contraction Audit Timeline displays with both baseline and contraction events
+    await waitFor(() => {
+      expect(screen.getByTestId("audit-timeline")).toBeInTheDocument();
+      expect(screen.getByText(/SLA Contraction Audit Timeline \(2\)/i)).toBeInTheDocument();
+      expect(screen.getByText("Baseline SLA Established")).toBeInTheDocument();
+      expect(screen.getByText("Initial Complaint")).toBeInTheDocument();
+      expect(screen.getByText("Corroboration #2 Attached")).toBeInTheDocument();
+      expect(screen.getByText(/-2h Contracted/i)).toBeInTheDocument();
+      expect(screen.getByText(/Basement flooding from ruptured line/i)).toBeInTheDocument();
+      expect(screen.getByText(/Heavy water leak in ground restroom/i)).toBeInTheDocument();
     });
   });
 });

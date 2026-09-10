@@ -7,6 +7,7 @@ import { Category } from "../models/Category.js";
 import { User } from "../models/User.js";
 import { verifyAuth, requireOrgAccess } from "../middleware/auth.js";
 import { computeComplaintSimilarity } from "../services/similarity.js";
+import { calculateContractedDeadline } from "../services/sla.js";
 
 export const incidentsRouter = Router({ mergeParams: true });
 
@@ -50,6 +51,16 @@ function formatIncident(incident: IIncident | any) {
     slaDeadline: incident.slaDeadline,
     gracePeriodExpiresAt: incident.gracePeriodExpiresAt,
     reopenCount: incident.reopenCount,
+    contractionAudit: (incident.contractionAudit || []).map((audit: any) => ({
+      id: audit._id ? audit._id.toString() : undefined,
+      complaintId: toIdString(audit.complaintId),
+      complaintTitle: audit.complaintTitle,
+      previousDeadline: audit.previousDeadline,
+      newDeadline: audit.newDeadline,
+      contractedMs: audit.contractedMs,
+      corroborationCount: audit.corroborationCount,
+      createdAt: audit.createdAt,
+    })),
     createdAt: incident.createdAt,
     updatedAt: incident.updatedAt,
   };
@@ -621,26 +632,49 @@ incidentsRouter.post(
     complaint.incidentId = incident._id;
     await complaint.save();
 
-    // 2. Increment parent corroborationCount
-    incident.corroborationCount += 1;
-
-    // 3. Dynamic SLA Contraction Calculation
+    // 2. Dynamic SLA Contraction Calculation
+    const newCorroborationCount = incident.corroborationCount + 1;
     const category = await Category.findById(incident.categoryId);
+    let newDeadline = incident.slaDeadline;
+    let auditEntry: any = null;
+
     if (category) {
-      const now = Date.now();
-      const currentRemainingMs = Math.max(0, incident.slaDeadline.getTime() - now);
-      const floorMs = category.floorHours * 3600 * 1000;
+      const now = new Date();
+      const prevDeadline = incident.slaDeadline;
+      const { newDeadline: calculatedDeadline, contractedMs } = calculateContractedDeadline(
+        prevDeadline,
+        now,
+        category.floorHours,
+        category.contractionFactor,
+        newCorroborationCount
+      );
+      newDeadline = calculatedDeadline;
 
-      // Contract remaining time by contractionFactor
-      const contractedRemainingMs = currentRemainingMs * (1 - category.contractionFactor);
-      const clampedRemainingMs = Math.max(contractedRemainingMs, floorMs);
-
-      if (currentRemainingMs > floorMs) {
-        incident.slaDeadline = new Date(now + clampedRemainingMs);
-      }
+      auditEntry = {
+        complaintId: complaint._id,
+        complaintTitle: complaint.title,
+        previousDeadline: prevDeadline,
+        newDeadline: newDeadline,
+        contractedMs: contractedMs,
+        corroborationCount: newCorroborationCount,
+        createdAt: now,
+      };
     }
 
-    await incident.save();
+    // 3. Atomically update incident in MongoDB (ADR 0004)
+    const updateOps: any = {
+      $inc: { corroborationCount: 1 },
+      $set: { slaDeadline: newDeadline },
+    };
+    if (auditEntry) {
+      updateOps.$push = { contractionAudit: auditEntry };
+    }
+
+    const updatedIncident = await Incident.findOneAndUpdate(
+      { _id: incident._id },
+      updateOps,
+      { new: true }
+    );
 
     // 4. Clean up source provisional incident if all its complaints have been merged out
     if (sourceIncidentId && sourceIncidentId.toString() !== incident._id.toString()) {
@@ -657,14 +691,15 @@ incidentsRouter.post(
       }
     }
 
-    await incident.populate("categoryId");
-    await incident.populate("assigneeId");
-    await incident.populate("supervisorId");
+    const incidentToReturn = updatedIncident || incident;
+    await incidentToReturn.populate("categoryId");
+    await incidentToReturn.populate("assigneeId");
+    await incidentToReturn.populate("supervisorId");
 
     const attachedComplaints = await Complaint.find({ incidentId: incident._id });
 
     res.status(200).json({
-      incident: formatIncident(incident),
+      incident: formatIncident(incidentToReturn),
       complaints: attachedComplaints.map(formatComplaint),
     });
   }

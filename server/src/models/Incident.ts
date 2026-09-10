@@ -7,6 +7,16 @@ export type IncidentStatus =
   | "Resolved"
   | "Closed";
 
+export interface IContractionAudit {
+  complaintId: Types.ObjectId;
+  complaintTitle: string;
+  previousDeadline: Date;
+  newDeadline: Date;
+  contractedMs: number;
+  corroborationCount: number;
+  createdAt: Date;
+}
+
 export interface IIncident extends Document {
   organizationId: Types.ObjectId;
   categoryId: Types.ObjectId;
@@ -18,6 +28,7 @@ export interface IIncident extends Document {
   slaDeadline: Date;
   gracePeriodExpiresAt?: Date;
   reopenCount: number;
+  contractionAudit: IContractionAudit[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -77,6 +88,40 @@ const IncidentSchema = new Schema<IIncident>(
       min: 0,
       required: true,
     },
+    contractionAudit: [
+      {
+        complaintId: {
+          type: Schema.Types.ObjectId,
+          ref: "Complaint",
+          required: true,
+        },
+        complaintTitle: {
+          type: String,
+          required: true,
+        },
+        previousDeadline: {
+          type: Date,
+          required: true,
+        },
+        newDeadline: {
+          type: Date,
+          required: true,
+        },
+        contractedMs: {
+          type: Number,
+          required: true,
+        },
+        corroborationCount: {
+          type: Number,
+          required: true,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+          required: true,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );

@@ -20,6 +20,8 @@ import {
   Layers,
   ChevronDown,
 } from "lucide-react";
+import { CountdownTimer } from "../components/CountdownTimer.js";
+import { AuditTimeline } from "../components/AuditTimeline.js";
 
 export function ComplainantPortal() {
   const { slug } = useParams<{ slug: string }>();
@@ -39,14 +41,6 @@ export function ComplainantPortal() {
     locationContext: "",
     photoUrl: "",
   });
-  const [currentTime, setCurrentTime] = useState(Date.now());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 10000);
-    return () => clearInterval(timer);
-  }, []);
 
   const loadData = async () => {
     if (!slug) return;
@@ -110,20 +104,6 @@ export function ComplainantPortal() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const formatRemainingTime = (deadlineStr?: string) => {
-    if (!deadlineStr) return "N/A";
-    const deadline = new Date(deadlineStr).getTime();
-    const diff = deadline - currentTime;
-
-    if (diff <= 0) {
-      return "SLA Breached";
-    }
-
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m remaining`;
   };
 
   const getStatusBadgeClass = (status?: string) => {
@@ -405,20 +385,32 @@ export function ComplainantPortal() {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-slate-400">
+                      <div className="flex items-center gap-2 text-slate-400">
                         <Clock className="w-3.5 h-3.5 text-amber-400" />
                         <span>SLA Deadline:</span>
-                        <span className="text-amber-300 font-medium">
-                          {complaint.incident?.slaDeadline
-                            ? `${new Date(
-                                complaint.incident.slaDeadline
-                              ).toLocaleString()} (${formatRemainingTime(
-                                complaint.incident.slaDeadline
-                              )})`
-                            : "Pending"}
-                        </span>
+                        {complaint.incident?.slaDeadline ? (
+                          <div className="flex items-center gap-1.5">
+                            <CountdownTimer
+                              deadline={complaint.incident.slaDeadline}
+                              createdAt={complaint.incident?.createdAt || complaint.createdAt}
+                              compact
+                            />
+                            <span className="text-slate-400 text-[11px]">
+                              ({new Date(complaint.incident.slaDeadline).toLocaleString()})
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 italic">Pending</span>
+                        )}
                       </div>
                     </div>
+
+                    {complaint.incident?.contractionAudit &&
+                      complaint.incident.contractionAudit.length > 0 && (
+                        <div className="pt-3 border-t border-slate-700/60">
+                          <AuditTimeline entries={complaint.incident.contractionAudit} />
+                        </div>
+                      )}
                   </div>
                 ))}
               </div>

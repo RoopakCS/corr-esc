@@ -15,7 +15,6 @@ import {
 } from "../services/api.js";
 import {
   Layers,
-  Clock,
   LogOut,
   AlertCircle,
   CheckCircle2,
@@ -28,9 +27,11 @@ import {
   Shield,
   ArrowRight,
   GitMerge,
-  Sparkles,
   Search,
+  Sparkles,
 } from "lucide-react";
+import { CountdownTimer } from "../components/CountdownTimer.js";
+import { AuditTimeline } from "../components/AuditTimeline.js";
 
 export function StaffPortal() {
   const { slug } = useParams<{ slug: string }>();
@@ -56,14 +57,6 @@ export function StaffPortal() {
   const [searchResults, setSearchResults] = useState<Complaint[]>([]);
   const [searchingCandidates, setSearchingCandidates] = useState(false);
   const [mergingComplaintId, setMergingComplaintId] = useState<string | null>(null);
-
-  // Live timer tick
-  const [currentTime, setCurrentTime] = useState(Date.now());
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(Date.now()), 10000);
-    return () => clearInterval(timer);
-  }, []);
 
   const loadIncidents = async () => {
     if (!slug) return;
@@ -195,20 +188,6 @@ export function StaffPortal() {
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const formatRemainingTime = (deadlineStr?: string) => {
-    if (!deadlineStr) return "N/A";
-    const deadline = new Date(deadlineStr).getTime();
-    const diff = deadline - currentTime;
-
-    if (diff <= 0) {
-      return "SLA Breached";
-    }
-
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m remaining`;
   };
 
   const getStatusBadgeClass = (status?: string) => {
@@ -350,19 +329,7 @@ export function StaffPortal() {
                   </div>
 
                   {/* SLA Countdown Timer */}
-                  <div className="bg-slate-950/80 rounded-xl p-3 border border-slate-800 space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-400 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-amber-400" /> SLA Deadline:
-                      </span>
-                      <span className="text-amber-300 font-medium">
-                        {formatRemainingTime(incident.slaDeadline)}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      {new Date(incident.slaDeadline).toLocaleString()}
-                    </div>
-                  </div>
+                  <CountdownTimer deadline={incident.slaDeadline} createdAt={incident.createdAt} />
 
                   {/* Corroboration Count & Assignee */}
                   <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
@@ -439,13 +406,18 @@ export function StaffPortal() {
                   Tier {selectedIncident.escalationTier}
                 </div>
               </div>
-              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                <div className="text-[10px] uppercase font-semibold text-slate-500">SLA Countdown</div>
-                <div className="text-xs font-bold text-amber-300 mt-1">
-                  {formatRemainingTime(selectedIncident.slaDeadline)}
-                </div>
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col justify-center">
+                <div className="text-[10px] uppercase font-semibold text-slate-500 mb-1">Live SLA Timer</div>
+                <CountdownTimer
+                  deadline={selectedIncident.slaDeadline}
+                  createdAt={selectedIncident.createdAt}
+                  compact
+                />
               </div>
             </div>
+
+            {/* SLA Contraction Audit Timeline */}
+            <AuditTimeline entries={selectedIncident.contractionAudit} />
 
             {/* Attached Complaints List */}
             <div className="space-y-3">

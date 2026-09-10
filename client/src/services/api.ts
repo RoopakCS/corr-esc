@@ -224,12 +224,25 @@ export interface RegisterComplainantPayload {
   password: string;
 }
 
+export interface ContractionAuditEntry {
+  id?: string;
+  complaintId: string;
+  complaintTitle: string;
+  previousDeadline: string;
+  newDeadline: string;
+  contractedMs: number;
+  corroborationCount: number;
+  createdAt: string;
+}
+
 export interface IncidentInfo {
   id: string;
   status: "New" | "Assigned" | "In Progress" | "Resolved" | "Closed";
   escalationTier: number;
   corroborationCount: number;
   slaDeadline: string;
+  createdAt?: string;
+  contractionAudit?: ContractionAuditEntry[];
 }
 
 export interface Complaint {
@@ -436,6 +449,7 @@ export interface IncidentItem {
   };
   corroborationCount: number;
   slaDeadline: string;
+  contractionAudit?: ContractionAuditEntry[];
   createdAt: string;
   updatedAt: string;
 }
@@ -458,7 +472,7 @@ export async function getIncidents(
 
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.message || "Failed to fetch incident queue");
+    throw new Error(data.message || "Failed to fetch incidents");
   }
 
   return data.incidents || [];

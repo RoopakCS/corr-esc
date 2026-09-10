@@ -47,6 +47,17 @@ function formatComplaint(complaint: IComplaint, incident?: IIncident | any, cate
           escalationTier: incidentDoc.escalationTier,
           corroborationCount: incidentDoc.corroborationCount,
           slaDeadline: incidentDoc.slaDeadline,
+          createdAt: incidentDoc.createdAt,
+          contractionAudit: (incidentDoc.contractionAudit || []).map((audit: any) => ({
+            id: audit._id ? audit._id.toString() : undefined,
+            complaintId: toIdString(audit.complaintId),
+            complaintTitle: audit.complaintTitle,
+            previousDeadline: audit.previousDeadline,
+            newDeadline: audit.newDeadline,
+            contractedMs: audit.contractedMs,
+            corroborationCount: audit.corroborationCount,
+            createdAt: audit.createdAt,
+          })),
         }
       : undefined,
     createdAt: complaint.createdAt,
@@ -62,6 +73,16 @@ function formatIncident(incident: IIncident) {
     escalationTier: incident.escalationTier,
     corroborationCount: incident.corroborationCount,
     slaDeadline: incident.slaDeadline,
+    contractionAudit: (incident.contractionAudit || []).map((audit: any) => ({
+      id: audit._id ? audit._id.toString() : undefined,
+      complaintId: toIdString(audit.complaintId),
+      complaintTitle: audit.complaintTitle,
+      previousDeadline: audit.previousDeadline,
+      newDeadline: audit.newDeadline,
+      contractedMs: audit.contractedMs,
+      corroborationCount: audit.corroborationCount,
+      createdAt: audit.createdAt,
+    })),
     createdAt: incident.createdAt,
     updatedAt: incident.updatedAt,
   };
@@ -135,6 +156,7 @@ complaintsRouter.post(
       escalationTier: 0,
       corroborationCount: 1,
       slaDeadline,
+      contractionAudit: [],
     });
 
     // Create complaint attached to incident
@@ -148,6 +170,18 @@ complaintsRouter.post(
       locationContext: locationContext ? locationContext.trim() : "",
       photoUrl: photoUrl || undefined,
     });
+
+    // Record initial baseline SLA event
+    incident.contractionAudit.push({
+      complaintId: complaint._id,
+      complaintTitle: complaint.title,
+      previousDeadline: slaDeadline,
+      newDeadline: slaDeadline,
+      contractedMs: 0,
+      corroborationCount: 1,
+      createdAt: incident.createdAt,
+    } as any);
+    await incident.save();
 
     res.status(201).json({
       complaint: formatComplaint(complaint, incident, category),
