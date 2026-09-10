@@ -645,6 +645,98 @@ describe("Frontend Client App", () => {
       expect(screen.getByText(/Heavy water leak in ground restroom/i)).toBeInTheDocument();
     });
   });
+
+  it("highlights escalated incidents requiring supervisory oversight, supervisory filters, and dual assignee/supervisor accountability", async () => {
+    localStorage.setItem("corr_esc_token", "mock-staff-jwt");
+    localStorage.setItem("user_role", "Staff");
+    localStorage.setItem("user_id", "staff-alice");
+    window.history.pushState({}, "Staff Dashboard", "/org/campus/staff/dashboard");
+
+    const escalatedIncident = {
+      id: "inc-escalated-1",
+      categoryId: "cat-elec",
+      category: { id: "cat-elec", name: "Power Systems", baseSlaHours: 8 },
+      status: "Assigned" as const,
+      escalationTier: 1,
+      corroborationCount: 3,
+      slaDeadline: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
+      createdAt: new Date().toISOString(),
+      assigneeId: "staff-alice",
+      assignee: { id: "staff-alice", name: "Alice Staff", email: "alice@campus.edu" },
+      supervisorId: "sup-john",
+      supervisor: { id: "sup-john", name: "John Supervisor", email: "john@campus.edu" },
+      contractionAudit: [],
+    };
+
+    vi.spyOn(global, "fetch").mockImplementation((url: string | URL | Request, init?: any) => {
+      const urlStr = url.toString();
+      const method = init?.method || "GET";
+
+      if (urlStr.includes("/api/v1/orgs/campus/incidents/inc-escalated-1/corroboration-suggestions")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ suggestions: [] }),
+        } as Response);
+      }
+
+      if (urlStr.includes("/api/v1/orgs/campus/incidents/inc-escalated-1") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              incident: escalatedIncident,
+              complaints: [
+                {
+                  id: "comp-esc-1",
+                  title: "High voltage breaker trip",
+                  description: "Total blackout across research labs",
+                  locationContext: "Substation Alpha",
+                  createdAt: new Date().toISOString(),
+                },
+              ],
+            }),
+        } as Response);
+      }
+
+      if (urlStr.includes("/api/v1/orgs/campus/incidents") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ incidents: [escalatedIncident] }),
+        } as Response);
+      }
+
+      return Promise.reject(new Error(`Unhandled URL: ${urlStr} ${method}`));
+    });
+
+    render(<App />);
+
+    // 1. Verify card renders Supervisory Oversight Required warning
+    await waitFor(() => {
+      expect(screen.getByText(/Supervisory Oversight Required \(Tier 1\)/i)).toBeInTheDocument();
+      expect(screen.getByText(/Assignee: Alice Staff/i)).toBeInTheDocument();
+      expect(screen.getByText(/Supervisor: John Supervisor/i)).toBeInTheDocument();
+    });
+
+    // 2. Verify supervisory filter tab exists and works
+    const supervisoryTab = screen.getByRole("button", { name: /Supervisory Oversight \(1\)/i });
+    expect(supervisoryTab).toBeInTheDocument();
+    fireEvent.click(supervisoryTab);
+
+    // 3. Open details modal
+    fireEvent.click(screen.getByRole("button", { name: /View Details & Complaints/i }));
+
+    // 4. Verify modal shows supervisory oversight banner and dual accountability
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Tier 1 Escalation — Supervisory Oversight Active/i)
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/Primary assignee remains responsible for hands-on execution/i)
+      ).toBeInTheDocument();
+      expect(screen.getByText("Alice Staff")).toBeInTheDocument();
+      expect(screen.getByText("John Supervisor")).toBeInTheDocument();
+    });
+  });
 });
 
 

@@ -87,7 +87,8 @@ async function checkCategoryPoolAccess(
   user: { userId: string; role: string },
   organizationId: mongoose.Types.ObjectId | string,
   categoryId: mongoose.Types.ObjectId | string | { _id: mongoose.Types.ObjectId | string },
-  allowAssigneeId?: mongoose.Types.ObjectId | string | null
+  allowAssigneeId?: mongoose.Types.ObjectId | string | null,
+  allowSupervisorId?: mongoose.Types.ObjectId | string | null
 ): Promise<boolean> {
   if (user.role === "Admin") return true;
   if (user.role !== "Staff") return false;
@@ -111,6 +112,10 @@ async function checkCategoryPoolAccess(
   if (hasPoolAccess) return true;
 
   if (allowAssigneeId && toIdString(allowAssigneeId) === user.userId) {
+    return true;
+  }
+
+  if (allowSupervisorId && toIdString(allowSupervisorId) === user.userId) {
     return true;
   }
 
@@ -142,11 +147,19 @@ incidentsRouter.get(
         return;
       }
 
-      filterQuery.categoryId = { $in: staffUser.categoryPoolIds };
+      filterQuery.$or = [
+        { categoryId: { $in: staffUser.categoryPoolIds } },
+        { assigneeId: staffUser._id },
+        { supervisorId: staffUser._id },
+      ];
     }
 
     if (req.query.status) {
       filterQuery.status = req.query.status;
+    }
+
+    if (req.query.escalated === "true") {
+      filterQuery.escalationTier = { $gt: 0 };
     }
 
     const incidents = await Incident.find(filterQuery)
@@ -191,12 +204,13 @@ incidentsRouter.get(
       return;
     }
 
-    // If Staff, ensure category is in their assigned pool or they are assignee
+    // If Staff, ensure category is in their assigned pool or they are assignee or supervisor
     const hasAccess = await checkCategoryPoolAccess(
       req.user,
       req.organization._id,
       incident.categoryId,
-      incident.assigneeId
+      incident.assigneeId,
+      incident.supervisorId
     );
 
     if (!hasAccess) {
@@ -360,6 +374,91 @@ incidentsRouter.patch(
     }
 
     incident.status = targetStatus as IncidentStatus;
+    await incident.save();
+
+    await incident.populate("categoryId");
+    await incident.populate("assigneeId");
+    await incident.populate("supervisorId");
+
+    res.status(200).json({
+      incident: formatIncident(incident),
+    });
+  }
+);
+
+const reassignSchema = z.object({
+  assigneeId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
+    message: "Invalid assignee ID",
+  }),
+});
+
+// PATCH /api/v1/orgs/:slug/incidents/:id/reassign
+incidentsRouter.patch(
+  "/:id/reassign",
+  verifyAuth,
+  requireOrgAccess,
+  async (req: Request, res: Response): Promise<void> => {
+    if (req.user?.role !== "Staff" && req.user?.role !== "Admin") {
+      res.status(403).json({ message: "Staff or Admin access required" });
+      return;
+    }
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: "Invalid incident ID" });
+      return;
+    }
+
+    const parseResult = reassignSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      res.status(400).json({
+        message: parseResult.error.errors[0]?.message || "Validation failed",
+      });
+      return;
+    }
+
+    const { assigneeId } = parseResult.data;
+
+    // Verify target is a valid Staff user in this organization
+    const targetStaff = await User.findOne({
+      _id: assigneeId,
+      organizationId: req.organization._id,
+      role: "Staff",
+    });
+
+    if (!targetStaff) {
+      res.status(400).json({
+        message: "Target assignee must be a valid staff member in this organization",
+      });
+      return;
+    }
+
+    const incident = await Incident.findOne({
+      _id: id,
+      organizationId: req.organization._id,
+    });
+
+    if (!incident) {
+      res.status(404).json({ message: "Incident not found" });
+      return;
+    }
+
+    // Only Admin or the designated supervisor can reassign an incident
+    const isSupervisor =
+      incident.supervisorId && incident.supervisorId.toString() === req.user.userId;
+    const isAdmin = req.user.role === "Admin";
+
+    if (!isAdmin && !isSupervisor) {
+      res.status(403).json({
+        message: "Only the designated supervisor or an admin can reassign this incident",
+      });
+      return;
+    }
+
+    incident.assigneeId = targetStaff._id;
+    if (incident.status === "New") {
+      incident.status = "Assigned";
+    }
     await incident.save();
 
     await incident.populate("categoryId");

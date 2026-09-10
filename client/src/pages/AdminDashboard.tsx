@@ -9,10 +9,13 @@ import {
   updateCategory,
   getStaff,
   createStaff,
+  getIncidents,
   Category,
   CategoryPayload,
   StaffMember,
+  IncidentItem,
 } from "../services/api.js";
+import { CountdownTimer } from "../components/CountdownTimer.js";
 import {
   Building,
   Shield,
@@ -37,7 +40,7 @@ const DEFAULT_CATEGORY_FORM: CategoryPayload = {
   baseSlaHours: 24,
   floorHours: 2,
   contractionFactor: 0.2,
-  tierTargets: [{ tier: 1, targetRole: "Supervisor" }],
+  tierTargets: [{ tier: 1, targetRole: "Supervisor", slaHours: 8 }],
 };
 
 export function AdminDashboard() {
@@ -46,7 +49,8 @@ export function AdminDashboard() {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
-  const [activeTab, setActiveTab] = useState<"categories" | "staff">("categories");
+  const [escalatedIncidents, setEscalatedIncidents] = useState<IncidentItem[]>([]);
+  const [activeTab, setActiveTab] = useState<"categories" | "staff" | "escalations">("categories");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,11 +74,17 @@ export function AdminDashboard() {
 
   useEffect(() => {
     if (!slug) return;
-    Promise.all([getAdminDashboard(slug), getCategories(slug), getStaff(slug)])
-      .then(([dashRes, catRes, staffRes]) => {
+    Promise.all([
+      getAdminDashboard(slug),
+      getCategories(slug),
+      getStaff(slug),
+      getIncidents(slug, { escalated: true }).catch(() => []),
+    ])
+      .then(([dashRes, catRes, staffRes, escRes]) => {
         setDashboard(dashRes);
         setCategories(catRes);
         setStaffList(staffRes);
+        setEscalatedIncidents(escRes);
         setLoading(false);
       })
       .catch((err) => {
@@ -112,8 +122,11 @@ export function AdminDashboard() {
           ? cat.tierTargets.map((t, idx) => ({
               tier: idx + 1,
               targetRole: t.targetRole || t.supervisorRole || "Supervisor",
+              supervisorRole: t.supervisorRole || t.targetRole || "Supervisor",
+              roleOrUserId: t.roleOrUserId,
+              slaHours: t.slaHours,
             }))
-          : [{ tier: 1, targetRole: "Supervisor" }],
+          : [{ tier: 1, targetRole: "Supervisor", supervisorRole: "Supervisor", slaHours: 8 }],
     });
     setModalError(null);
     setIsModalOpen(true);
@@ -125,7 +138,7 @@ export function AdminDashboard() {
       ...prev,
       tierTargets: [
         ...(prev.tierTargets || []),
-        { tier: nextTier, targetRole: `Tier ${nextTier} Supervisor` },
+        { tier: nextTier, targetRole: `Tier ${nextTier} Supervisor`, slaHours: 4 },
       ],
     }));
   };
@@ -351,6 +364,17 @@ export function AdminDashboard() {
             <Users className="w-4 h-4" />
             <span>Staff & Category Pools ({staffList.length})</span>
           </button>
+          <button
+            onClick={() => setActiveTab("escalations")}
+            className={`pb-3 text-sm font-semibold border-b-2 flex items-center gap-2 transition ${
+              activeTab === "escalations"
+                ? "border-red-500 text-white"
+                : "border-transparent text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Shield className="w-4 h-4 text-red-400" />
+            <span>Supervisory Escalations ({escalatedIncidents.length})</span>
+          </button>
         </div>
 
         {/* Categories Section */}
@@ -523,6 +547,81 @@ export function AdminDashboard() {
                       ) : (
                         <span className="text-xs text-amber-400/80 italic">No category pools assigned</span>
                       )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Supervisory Escalations Section */}
+        {activeTab === "escalations" && (
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Shield className="w-5 h-5 text-red-400" />
+                <span>Supervisory Escalations & Managerial Oversight</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Active incidents that have breached dynamic SLA deadlines and escalated to supervisory tiers. Primary assignee accountability is maintained while designated supervisory authorities provide managerial oversight.
+              </p>
+            </div>
+
+            {escalatedIncidents.length === 0 ? (
+              <div className="border border-dashed border-slate-800 rounded-xl p-8 text-center space-y-3">
+                <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto" />
+                <p className="text-sm text-slate-300 font-semibold">No Breached or Escalated Incidents</p>
+                <p className="text-xs text-slate-500">All active incidents in the organization are currently tracking within their dynamic SLA deadlines.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {escalatedIncidents.map((incident) => (
+                  <div
+                    key={incident.id}
+                    className="bg-slate-950 border border-red-500/40 rounded-2xl p-5 shadow-lg space-y-4"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs px-2.5 py-0.5 rounded-md bg-red-950/80 text-red-300 border border-red-500/30 font-semibold">
+                        Tier {incident.escalationTier} Escalation
+                      </span>
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-medium">
+                        {incident.status}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="text-xs text-slate-500 font-mono">Incident #{incident.id.slice(-6)}</div>
+                      <div className="text-sm font-semibold text-white">
+                        {incident.category?.name || "Problem Category"}
+                      </div>
+                    </div>
+
+                    <CountdownTimer deadline={incident.slaDeadline} createdAt={incident.createdAt} />
+
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-3 border-t border-slate-800">
+                      <div>
+                        <div className="text-slate-500 text-[11px]">Primary Assignee</div>
+                        <div className="text-white font-medium">
+                          {incident.assignee?.name || "Unassigned"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-slate-500 text-[11px]">Designated Supervisor</div>
+                        <div className="text-amber-300 font-medium">
+                          {incident.supervisor?.name || "Tier Authority"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-slate-400 pt-2 border-t border-slate-900 flex justify-between">
+                      <span>Corroborations: <strong className="text-white">{incident.corroborationCount}</strong></span>
+                      <button
+                        onClick={() => navigate(`/org/${slug}/staff/dashboard`)}
+                        className="text-indigo-400 hover:text-indigo-300 font-medium"
+                      >
+                        Inspect in Staff Portal &rarr;
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -764,37 +863,81 @@ export function AdminDashboard() {
                   </button>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {categoryForm.tierTargets?.map((t, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-400 w-16">
-                        Tier {t.tier}:
-                      </span>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Supervisor / Authority Role"
-                        value={t.targetRole || t.supervisorRole || ""}
-                        onChange={(e) => {
-                          const updated = [...(categoryForm.tierTargets || [])];
-                          updated[idx] = {
-                            ...updated[idx],
-                            targetRole: e.target.value,
-                            supervisorRole: e.target.value,
-                          };
-                          setCategoryForm({ ...categoryForm, tierTargets: updated });
-                        }}
-                        className="flex-1 px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
-                      {categoryForm.tierTargets && categoryForm.tierTargets.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeTierTarget(idx)}
-                          className="text-slate-500 hover:text-red-400 p-1"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                    <div key={idx} className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-indigo-300">
+                          Tier {t.tier} Configuration
+                        </span>
+                        {categoryForm.tierTargets && categoryForm.tierTargets.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeTierTarget(idx)}
+                            className="text-slate-500 hover:text-red-400 p-1 transition"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-medium">Supervisor Role / Authority</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Supervisor or Director"
+                            value={t.targetRole || t.supervisorRole || ""}
+                            onChange={(e) => {
+                              const updated = [...(categoryForm.tierTargets || [])];
+                              updated[idx] = {
+                                ...updated[idx],
+                                targetRole: e.target.value,
+                                supervisorRole: e.target.value,
+                              };
+                              setCategoryForm({ ...categoryForm, tierTargets: updated });
+                            }}
+                            className="w-full mt-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-medium">Tier Escalation SLA (Hours)</label>
+                          <input
+                            type="number"
+                            min="0.1"
+                            step="0.5"
+                            placeholder="e.g. 4"
+                            value={t.slaHours || ""}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value);
+                              const updated = [...(categoryForm.tierTargets || [])];
+                              updated[idx] = {
+                                ...updated[idx],
+                                slaHours: val > 0 ? val : undefined,
+                              };
+                              setCategoryForm({ ...categoryForm, tierTargets: updated });
+                            }}
+                            className="w-full mt-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-medium">Designated Staff ID or Email (Optional)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. supervisor@org.edu or staff user ID"
+                          value={t.roleOrUserId || ""}
+                          onChange={(e) => {
+                            const updated = [...(categoryForm.tierTargets || [])];
+                            updated[idx] = {
+                              ...updated[idx],
+                              roleOrUserId: e.target.value || undefined,
+                            };
+                            setCategoryForm({ ...categoryForm, tierTargets: updated });
+                          }}
+                          className="w-full mt-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>

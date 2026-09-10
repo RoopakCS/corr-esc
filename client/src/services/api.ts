@@ -50,7 +50,9 @@ export interface TierTarget {
   tier: number;
   targetRole: string;
   supervisorRole?: string;
+  roleOrUserId?: string;
   targetUserId?: string;
+  slaHours?: number;
 }
 
 export interface Category {
@@ -456,15 +458,23 @@ export interface IncidentItem {
 
 export async function getIncidents(
   slug: string,
-  status?: string
+  options?: { status?: string; escalated?: boolean } | string
 ): Promise<IncidentItem[]> {
   const token = getToken();
   if (!token) {
     throw new Error("Authentication required");
   }
 
-  const queryParams = status ? `?status=${encodeURIComponent(status)}` : "";
-  const res = await fetch(`${API_BASE}/${encodeURIComponent(slug)}/incidents${queryParams}`, {
+  const query = new URLSearchParams();
+  if (typeof options === "string") {
+    query.set("status", options);
+  } else if (options) {
+    if (options.status) query.set("status", options.status);
+    if (options.escalated) query.set("escalated", "true");
+  }
+
+  const queryString = query.toString() ? `?${query.toString()}` : "";
+  const res = await fetch(`${API_BASE}/${encodeURIComponent(slug)}/incidents${queryString}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -556,6 +566,36 @@ export async function updateIncidentStatus(
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.message || "Failed to update incident status");
+  }
+
+  return data.incident;
+}
+
+export async function reassignIncident(
+  slug: string,
+  incidentId: string,
+  assigneeId: string
+): Promise<IncidentItem> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(
+    `${API_BASE}/${encodeURIComponent(slug)}/incidents/${encodeURIComponent(incidentId)}/reassign`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ assigneeId }),
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to reassign incident");
   }
 
   return data.incident;
@@ -657,6 +697,89 @@ export async function mergeComplaintIntoIncident(
 
   return data;
 }
+
+export interface NotificationItem {
+  id: string;
+  organizationId: string;
+  recipientId: string;
+  incidentId?: string;
+  type: string;
+  title: string;
+  message: string;
+  priority: "normal" | "high";
+  isRead: boolean;
+  createdAt: string;
+}
+
+export async function getNotifications(
+  slug: string
+): Promise<{ notifications: NotificationItem[]; unreadCount: number }> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(`${API_BASE}/${encodeURIComponent(slug)}/notifications`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to fetch notifications");
+  }
+
+  return data;
+}
+
+export async function markNotificationRead(
+  slug: string,
+  id: string
+): Promise<void> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(
+    `${API_BASE}/${encodeURIComponent(slug)}/notifications/${encodeURIComponent(id)}/read`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || "Failed to mark notification as read");
+  }
+}
+
+export async function markAllNotificationsRead(slug: string): Promise<void> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(
+    `${API_BASE}/${encodeURIComponent(slug)}/notifications/mark-all-read`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || "Failed to mark all notifications as read");
+  }
+}
+
 
 
 

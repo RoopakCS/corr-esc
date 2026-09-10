@@ -3,6 +3,8 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 export interface ISupervisorTier {
   tier: number;
   supervisorRole: string;
+  roleOrUserId?: string;
+  slaHours?: number;
 }
 
 export interface ICategory extends Document {
@@ -27,6 +29,8 @@ const SupervisorTierSchema = new Schema<ISupervisorTier>(
   {
     tier: { type: Number, required: true, min: 1 },
     supervisorRole: { type: String, required: true, trim: true },
+    roleOrUserId: { type: String, trim: true },
+    slaHours: { type: Number, min: 0.01 },
   },
   { _id: false }
 );

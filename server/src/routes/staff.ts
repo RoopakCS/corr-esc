@@ -98,8 +98,8 @@ staffRouter.get(
   verifyAuth,
   requireOrgAccess,
   async (req: Request, res: Response): Promise<void> => {
-    if (req.user?.role !== "Admin") {
-      res.status(403).json({ message: "Admin access required" });
+    if (req.user?.role !== "Admin" && req.user?.role !== "Staff") {
+      res.status(403).json({ message: "Staff or Admin access required" });
       return;
     }
 

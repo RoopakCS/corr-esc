@@ -5,6 +5,7 @@ import { categoriesRouter } from "./routes/categories.js";
 import { complaintsRouter } from "./routes/complaints.js";
 import { staffRouter } from "./routes/staff.js";
 import { incidentsRouter } from "./routes/incidents.js";
+import { notificationsRouter } from "./routes/notifications.js";
 
 export function createApp(): Express {
   const app = express();
@@ -18,6 +19,7 @@ export function createApp(): Express {
   app.use("/api/v1/orgs/:slug/complaints", complaintsRouter);
   app.use("/api/v1/orgs/:slug/staff", staffRouter);
   app.use("/api/v1/orgs/:slug/incidents", incidentsRouter);
+  app.use("/api/v1/orgs/:slug/notifications", notificationsRouter);
 
   return app;
 }

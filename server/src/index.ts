@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import { createApp } from "./app.js";
+import { startSlaSweeper } from "./services/slaSweeper.js";
 
 dotenv.config();
 
@@ -58,6 +59,7 @@ async function main() {
     const app = createApp();
     app.listen(PORT, () => {
       console.log(`🚀 CORR-ESC Backend Server running on http://localhost:${PORT}`);
+      startSlaSweeper(30000);
     });
   } catch (error) {
     process.exit(1);

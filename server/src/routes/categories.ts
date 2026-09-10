@@ -9,17 +9,23 @@ function escapeRegex(text: string): string {
   return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 }
 
-const supervisorTierSchema = z.object({
-  tier: z.number().int().min(1, "Tier level must be at least 1"),
-  supervisorRole: z
-    .string()
-    .min(2, "Supervisor role must be at least 2 characters")
-    .optional(),
-  targetRole: z.string().optional(),
-}).transform((data) => ({
-  tier: data.tier,
-  supervisorRole: (data.supervisorRole || data.targetRole || "Supervisor").trim(),
-}));
+const supervisorTierSchema = z
+  .object({
+    tier: z.number().int().min(1, "Tier level must be at least 1"),
+    supervisorRole: z
+      .string()
+      .min(2, "Supervisor role must be at least 2 characters")
+      .optional(),
+    targetRole: z.string().optional(),
+    roleOrUserId: z.string().optional(),
+    slaHours: z.number().positive("Tier SLA hours must be greater than 0").optional(),
+  })
+  .transform((data) => ({
+    tier: data.tier,
+    supervisorRole: (data.supervisorRole || data.targetRole || "Supervisor").trim(),
+    roleOrUserId: data.roleOrUserId ? data.roleOrUserId.trim() : undefined,
+    slaHours: data.slaHours,
+  }));
 
 const categorySchema = z
   .object({
@@ -56,6 +62,8 @@ function formatCategory(category: ICategory) {
       tier: t.tier,
       supervisorRole: t.supervisorRole,
       targetRole: t.supervisorRole, // Maintain API backward compatibility
+      roleOrUserId: t.roleOrUserId,
+      slaHours: t.slaHours,
     })),
     createdAt: category.createdAt,
     updatedAt: category.updatedAt,
