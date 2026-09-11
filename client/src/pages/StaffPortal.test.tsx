@@ -81,7 +81,7 @@ const mockComplaints: api.Complaint[] = [
     description: "Main line leak causing puddles near Room 102",
     locationContext: "Science Wing, Ground Floor",
     photoUrl: "https://example.com/leak.jpg",
-    complainantId: "user-comp-1",
+    complainantId: "complainant-1",
     categoryId: "cat-plumbing",
     categoryName: "Plumbing",
     incidentId: "inc-101",
@@ -129,7 +129,7 @@ describe("StaffPortal Component", () => {
     expect(screen.getByText(/Pool Items/i)).toBeInTheDocument();
   });
 
-  it("filters incidents by queue status and supervisory oversight tabs", async () => {
+  it("filters incidents by status and supervisory oversight tabs", async () => {
     renderStaffPortal();
 
     await waitFor(() => {
@@ -191,7 +191,7 @@ describe("StaffPortal Component", () => {
       title: "Second pipe burst in corridor",
       description: "Water spraying from ceiling pipe",
       locationContext: "Corridor 102",
-      complainantId: "user-comp-2",
+      complainantId: "complainant-2",
       categoryId: "cat-plumbing",
       incidentId: "inc-candidate",
       createdAt: new Date().toISOString(),

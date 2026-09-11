@@ -41,6 +41,14 @@ import { CountdownTimer } from "../components/CountdownTimer.js";
 import { AuditTimeline } from "../components/AuditTimeline.js";
 import { NotificationCenter } from "../components/NotificationCenter.js";
 
+export type IncidentFilter =
+  | "all"
+  | "new"
+  | "assigned"
+  | "in_progress"
+  | "breached"
+  | "escalated";
+
 export function StaffPortal() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -49,7 +57,7 @@ export function StaffPortal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [activeFilter, setActiveFilter] = useState<IncidentFilter>("all");
 
   // Incident Details Split-Pane Drawer
   const [selectedIncident, setSelectedIncident] = useState<IncidentItem | null>(null);
@@ -278,6 +286,13 @@ export function StaffPortal() {
     if (activeFilter === "assigned") return incident.status === "Assigned";
     if (activeFilter === "in_progress") return incident.status === "In Progress";
     if (activeFilter === "escalated") return incident.escalationTier > 0;
+    if (activeFilter === "breached") {
+      return (
+        new Date(incident.slaDeadline).getTime() < now &&
+        incident.status !== "Closed" &&
+        incident.status !== "Resolved"
+      );
+    }
     return true;
   });
 
@@ -372,7 +387,7 @@ export function StaffPortal() {
           </div>
         )}
 
-        {actionSuccess && (
+        {!selectedIncident && actionSuccess && (
           <div className="p-4 rounded-xl bg-status-safe-bg border border-status-safe-border flex items-start space-x-3 animate-in fade-in">
             <CheckCircle2 className="w-5 h-5 text-status-safe mt-0.5 flex-shrink-0" />
             <p className="text-xs sm:text-sm text-emerald-200 font-medium">{actionSuccess}</p>
@@ -442,15 +457,16 @@ export function StaffPortal() {
           </div>
         </div>
 
-        {/* Segmented Queue Filter Controls */}
+        {/* Segmented Status Filter Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-obsidian-border pb-4">
           <div className="inline-flex p-1 bg-obsidian-surface border border-obsidian-border rounded-xl gap-1 flex-wrap">
             {[
-              { id: "all", label: `All (${totalCount})` },
-              { id: "new", label: `Unassigned (${unassignedCount})` },
-              { id: "assigned", label: `Assigned (${assignedCount})` },
-              { id: "in_progress", label: `In Progress (${inProgressCount})` },
-              { id: "escalated", label: `Supervisory Oversight (${escalatedCount})` },
+              { id: "all" as IncidentFilter, label: `All (${totalCount})` },
+              { id: "new" as IncidentFilter, label: `Unassigned (${unassignedCount})` },
+              { id: "assigned" as IncidentFilter, label: `Assigned (${assignedCount})` },
+              { id: "in_progress" as IncidentFilter, label: `In Progress (${inProgressCount})` },
+              { id: "breached" as IncidentFilter, label: `Impending Breaches (${breachedCount})` },
+              { id: "escalated" as IncidentFilter, label: `Supervisory Oversight (${escalatedCount})` },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -478,7 +494,7 @@ export function StaffPortal() {
             <Layers className="w-12 h-12 text-slate-600 mx-auto" />
             <h3 className="text-base sm:text-lg font-bold text-slate-200">Incident Pool Clear</h3>
             <p className="text-xs sm:text-sm text-slate-400 max-w-sm mx-auto">
-              There are no active incidents matching this queue filter in your assigned category pools.
+              There are no active incidents matching this filter in your assigned category pools.
             </p>
           </div>
         ) : (
@@ -572,14 +588,63 @@ export function StaffPortal() {
                   </div>
                 </div>
 
-                {/* Inspect Action */}
-                <button
-                  onClick={() => openDetails(incident)}
-                  className="w-full mt-2 py-2.5 px-4 bg-obsidian-elevated hover:bg-obsidian-hover border border-obsidian-border hover:border-obsidian-subtle rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-1.5 pressable focus-ring transition-all duration-200 shadow-sm"
-                >
-                  <span>View Details & Complaints</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white" />
-                </button>
+                {/* Quick Action Triggers & Inspect Action */}
+                <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-obsidian-border/50">
+                  {incident.status === "New" && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClaim(incident.id);
+                      }}
+                      disabled={actionLoading}
+                      className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-1.5 pressable focus-ring transition-all duration-200"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>Quick Claim</span>
+                    </button>
+                  )}
+                  {incident.status === "Assigned" && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartWork(incident.id);
+                      }}
+                      disabled={actionLoading}
+                      className="flex-1 py-2 px-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-1.5 pressable focus-ring transition-all duration-200"
+                    >
+                      <Play className="w-3.5 h-3.5" />
+                      <span>Quick Start</span>
+                    </button>
+                  )}
+                  {incident.status === "In Progress" && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleResolve(incident.id);
+                      }}
+                      disabled={actionLoading}
+                      className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-1.5 pressable focus-ring transition-all duration-200"
+                    >
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      <span>Quick Resolve</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => openDetails(incident)}
+                    className={`py-2 px-3 bg-obsidian-elevated hover:bg-obsidian-hover border border-obsidian-border hover:border-obsidian-subtle rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-1.5 pressable focus-ring transition-all duration-200 shadow-sm ${
+                      incident.status === "Resolved" || incident.status === "Closed"
+                        ? "w-full"
+                        : "flex-1"
+                    }`}
+                  >
+                    <span>View Details & Complaints</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -616,7 +681,14 @@ export function StaffPortal() {
               </button>
             </div>
 
-            {/* Error Message inside Drawer */}
+            {/* Feedback Banners inside Drawer */}
+            {actionSuccess && (
+              <div className="p-3.5 m-5 mb-0 bg-status-safe-bg border border-status-safe-border rounded-xl flex items-start gap-2 text-xs text-emerald-200 font-medium animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-status-safe" />
+                <span>{actionSuccess}</span>
+              </div>
+            )}
+
             {detailsError && (
               <div className="p-3.5 m-5 mb-0 bg-status-breached-bg border border-status-breached-border rounded-xl flex items-start gap-2 text-xs text-red-300 font-medium animate-in fade-in">
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-400" />
@@ -687,6 +759,11 @@ export function StaffPortal() {
                     <span className="text-amber-300 font-semibold">
                       {selectedIncident.supervisor.name}
                     </span>
+                  </div>
+                ) : selectedIncident.escalationTier > 0 ? (
+                  <div>
+                    <span className="text-slate-500">Supervisory Status: </span>
+                    <span className="text-amber-400 font-medium">Assignment Pending</span>
                   </div>
                 ) : (
                   <div>
@@ -919,28 +996,28 @@ export function StaffPortal() {
 
                   {searchResults.length > 0 && (
                     <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {searchResults.map((cand) => (
+                      {searchResults.map((candidateComplaint) => (
                         <div
-                          key={cand.id}
+                          key={candidateComplaint.id}
                           className="bg-obsidian border border-obsidian-border rounded-xl p-3 flex items-center justify-between gap-3 text-xs"
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="font-bold text-slate-200 truncate">{cand.title}</div>
-                            <div className="text-slate-400 truncate">{cand.description}</div>
-                            {cand.locationContext && (
+                            <div className="font-bold text-slate-200 truncate">{candidateComplaint.title}</div>
+                            <div className="text-slate-400 truncate">{candidateComplaint.description}</div>
+                            {candidateComplaint.locationContext && (
                               <div className="text-slate-500 text-[11px] truncate">
-                                📍 {cand.locationContext}
+                                📍 {candidateComplaint.locationContext}
                               </div>
                             )}
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleMerge(cand.id)}
-                            disabled={mergingComplaintId === cand.id}
+                            onClick={() => handleMerge(candidateComplaint.id)}
+                            disabled={mergingComplaintId === candidateComplaint.id}
                             className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-xs font-semibold pressable transition-all duration-200"
                           >
                             <GitMerge className="w-3.5 h-3.5" />
-                            <span>{mergingComplaintId === cand.id ? "Merging..." : "Merge"}</span>
+                            <span>{mergingComplaintId === candidateComplaint.id ? "Merging..." : "Merge"}</span>
                           </button>
                         </div>
                       ))}
