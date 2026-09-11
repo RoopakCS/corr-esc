@@ -157,10 +157,23 @@ export function AdminDashboard() {
     });
   };
 
+  const updateTierTarget = (index: number, patch: Partial<NonNullable<CategoryPayload["tierTargets"]>[number]>) => {
+    setCategoryForm((prev) => {
+      const updated = [...(prev.tierTargets || [])];
+      updated[index] = { ...updated[index], ...patch };
+      return { ...prev, tierTargets: updated };
+    });
+  };
+
   const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!slug) return;
     setModalError(null);
+
+    if (!categoryForm.name.trim()) {
+      setModalError("Category name is required");
+      return;
+    }
 
     if (categoryForm.floorHours >= categoryForm.baseSlaHours) {
       setModalError("Minimum floor hours must be less than base SLA hours");
@@ -198,6 +211,22 @@ export function AdminDashboard() {
     e.preventDefault();
     if (!slug) return;
     setStaffModalError(null);
+
+    if (!staffForm.name.trim()) {
+      setStaffModalError("Staff member full name is required");
+      return;
+    }
+
+    if (!staffForm.email.trim() || !staffForm.email.includes("@")) {
+      setStaffModalError("Valid staff email address is required");
+      return;
+    }
+
+    if (!staffForm.password || staffForm.password.length < 6) {
+      setStaffModalError("Initial password must be at least 6 characters");
+      return;
+    }
+
     setSavingStaff(true);
 
     try {
@@ -325,9 +354,6 @@ export function AdminDashboard() {
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
                   <CheckCircle className="w-3.5 h-3.5" /> Organization Active
                 </span>
-                <span className="text-xs text-slate-400 hidden sm:inline">
-                  CORR-ESC Corroboration Engine v2.4
-                </span>
               </div>
               <h2 className="text-2xl font-bold tracking-tight text-white">
                 Welcome back, {dashboard.admin.name}
@@ -337,10 +363,7 @@ export function AdminDashboard() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2 text-xs font-mono text-slate-400 bg-obsidian-elevated/60 px-3 py-1.5 rounded-xl border border-obsidian-border">
-              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-              <span>SLAs Calibrated</span>
-            </div>
+
           </div>
         </div>
 
@@ -481,7 +504,12 @@ export function AdminDashboard() {
                     <div>
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h4 className="font-bold text-sm text-white tracking-tight">{cat.name}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm text-white tracking-tight">{cat.name}</h4>
+                            <span className="text-[9px] font-mono font-medium px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              Policy Active
+                            </span>
+                          </div>
                           <span className="text-[10px] font-mono text-slate-500">ID: {cat.id.slice(-6)}</span>
                         </div>
                         <button
@@ -640,10 +668,10 @@ export function AdminDashboard() {
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Shield className="w-4 h-4 text-red-400" />
-                <span>Supervisory Escalations & Managerial Oversight</span>
+                <span>Supervisory Escalations & Oversight</span>
               </h3>
               <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                Active incidents that have breached dynamic SLA deadlines and escalated to supervisory tiers. Primary assignee accountability is maintained while designated supervisory authorities provide managerial intervention.
+                Active incidents that have breached dynamic SLA deadlines and escalated to supervisory tiers. Primary assignee accountability is maintained while designated supervisory authorities provide supervisory intervention.
               </p>
             </div>
 
@@ -1027,13 +1055,10 @@ export function AdminDashboard() {
                             placeholder="e.g. Supervisor or Director"
                             value={t.targetRole || t.supervisorRole || ""}
                             onChange={(e) => {
-                              const updated = [...(categoryForm.tierTargets || [])];
-                              updated[idx] = {
-                                ...updated[idx],
+                              updateTierTarget(idx, {
                                 targetRole: e.target.value,
                                 supervisorRole: e.target.value,
-                              };
-                              setCategoryForm({ ...categoryForm, tierTargets: updated });
+                              });
                             }}
                             className="w-full px-3 py-1.5 bg-obsidian-surface border border-obsidian-border rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           />
@@ -1054,12 +1079,9 @@ export function AdminDashboard() {
                             value={t.slaHours || ""}
                             onChange={(e) => {
                               const val = parseFloat(e.target.value);
-                              const updated = [...(categoryForm.tierTargets || [])];
-                              updated[idx] = {
-                                ...updated[idx],
+                              updateTierTarget(idx, {
                                 slaHours: val > 0 ? val : undefined,
-                              };
-                              setCategoryForm({ ...categoryForm, tierTargets: updated });
+                              });
                             }}
                             className="w-full px-3 py-1.5 bg-obsidian-surface border border-obsidian-border rounded-xl text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           />
@@ -1106,7 +1128,7 @@ export function AdminDashboard() {
                   disabled={savingCategory}
                   className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition disabled:opacity-50 pressable focus-ring"
                 >
-                  {savingCategory ? "Saving..." : "Save Category"}
+                  {savingCategory ? "Saving..." : editingCategory ? "Update Category" : "Save Category"}
                 </button>
               </div>
             </form>
