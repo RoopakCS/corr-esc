@@ -4,8 +4,11 @@ import mongoose from "mongoose";
 import { Complaint, IComplaint } from "../models/Complaint.js";
 import { Incident, IIncident } from "../models/Incident.js";
 import { Category } from "../models/Category.js";
+import { User } from "../models/User.js";
+import { Notification } from "../models/Notification.js";
 import { verifyAuth, requireOrgAccess } from "../middleware/auth.js";
 import { computeComplaintSimilarity } from "../services/similarity.js";
+import { broadcastOrgEvent } from "../services/realtime.js";
 
 export const complaintsRouter = Router({ mergeParams: true });
 
@@ -184,6 +187,44 @@ complaintsRouter.post(
       createdAt: incident.createdAt,
     } as any);
     await incident.save();
+
+    // 1. Notification for Complainant
+    await Notification.create({
+      organizationId: req.organization._id,
+      recipientId: new mongoose.Types.ObjectId(req.user!.userId),
+      incidentId: incident._id,
+      complaintId: complaint._id,
+      type: "complaint_submitted",
+      title: "Complaint Received",
+      message: `Your complaint "${complaint.title}" has been received and logged under Incident #${incident._id.toString().slice(-6)}.`,
+      priority: "normal",
+      isRead: false,
+    });
+
+    // 2. Notification for Admins
+    const admins = await User.find({
+      organizationId: req.organization._id,
+      role: "Admin",
+    });
+
+    for (const admin of admins) {
+      await Notification.create({
+        organizationId: req.organization._id,
+        recipientId: admin._id,
+        incidentId: incident._id,
+        complaintId: complaint._id,
+        type: "incident_created",
+        title: "New Incident Logged",
+        message: `A new incident has been logged in category "${category.name}": "${complaint.title}".`,
+        priority: "normal",
+        isRead: false,
+      });
+    }
+
+    // 3. Broadcast real-time SSE event to org clients (sanitized to preserve blind isolation)
+    broadcastOrgEvent(req.organization._id.toString(), "incident:created", {
+      incident: formatIncident(incident),
+    });
 
     res.status(201).json({
       complaint: formatComplaint(complaint, incident, category),

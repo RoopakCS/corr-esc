@@ -1,8 +1,10 @@
 import mongoose, { Types } from "mongoose";
 import { Incident, IncidentStatus } from "../models/Incident.js";
+import { Complaint } from "../models/Complaint.js";
 import { Category, ISupervisorTier } from "../models/Category.js";
 import { User, IUser } from "../models/User.js";
 import { Notification } from "../models/Notification.js";
+import { broadcastOrgEvent } from "./realtime.js";
 
 const ACTIVE_INCIDENT_STATUSES: IncidentStatus[] = [
   "New",
@@ -144,10 +146,13 @@ export async function runSlaBreachSweep(
 
     escalatedIds.push(updated._id.toString());
 
-    // Generate high-priority breach notifications for designated supervisor and org admins
+    // Generate high-priority breach notifications for designated supervisor, assignee, and org admins
     const recipientIds = new Set<string>();
     if (supervisor) {
       recipientIds.add(supervisor._id.toString());
+    }
+    if (incident.assigneeId) {
+      recipientIds.add(incident.assigneeId.toString());
     }
 
     const admins = await User.find({
@@ -177,6 +182,36 @@ export async function runSlaBreachSweep(
       });
       totalNotificationsCreated += 1;
     }
+
+    // Also notify attached complainants about the tier escalation
+    const attachedComplaints = await Complaint.find({ incidentId: incident._id });
+    const complainantIds = Array.from(
+      new Set(attachedComplaints.map((c) => c.complainantId.toString()))
+    );
+
+    for (const compId of complainantIds) {
+      await Notification.create({
+        organizationId: incident.organizationId,
+        recipientId: new mongoose.Types.ObjectId(compId),
+        incidentId: incident._id,
+        type: "incident_escalated",
+        title: `Incident Escalated to Tier ${newTier}`,
+        message: `Your complaint's incident in category "${
+          category?.name || "Incident"
+        }" has breached its SLA and has been escalated to Tier ${newTier} for higher supervisory oversight.`,
+        priority: "high",
+        isRead: false,
+        createdAt: referenceTime,
+      });
+      totalNotificationsCreated += 1;
+    }
+
+    // Broadcast escalation event via SSE
+    broadcastOrgEvent(incident.organizationId.toString(), "incident:escalated", {
+      incidentId: updated._id.toString(),
+      escalationTier: newTier,
+      slaDeadline: newDeadline,
+    });
   }
 
   // Sweep resolved incidents whose grace period has expired without contest
@@ -200,6 +235,9 @@ export async function runSlaBreachSweep(
     );
     if (closed) {
       closedIncidents.push(closed._id.toString());
+      broadcastOrgEvent(inc.organizationId.toString(), "incident:closed", {
+        incidentId: closed._id.toString(),
+      });
     }
   }
 

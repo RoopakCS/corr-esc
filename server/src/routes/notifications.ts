@@ -10,6 +10,7 @@ function formatNotification(notification: INotification) {
     organizationId: notification.organizationId.toString(),
     recipientId: notification.recipientId.toString(),
     incidentId: notification.incidentId ? notification.incidentId.toString() : undefined,
+    complaintId: notification.complaintId ? notification.complaintId.toString() : undefined,
     type: notification.type,
     title: notification.title,
     message: notification.message,

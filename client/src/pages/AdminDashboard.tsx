@@ -16,6 +16,7 @@ import {
   IncidentItem,
 } from "../services/api.js";
 import { CountdownTimer } from "../components/CountdownTimer.js";
+import { NotificationCenter } from "../components/NotificationCenter.js";
 import {
   Building,
   Shield,
@@ -270,6 +271,24 @@ export function AdminDashboard() {
         </div>
 
         <div className="flex items-center space-x-4">
+          <NotificationCenter
+            slug={slug || ""}
+            onRealtimeEvent={() => {
+              if (slug) {
+                getIncidents(slug, { escalated: true }).then(setEscalatedIncidents).catch(() => {});
+                getCategories(slug).then(setCategories).catch(() => {});
+              }
+            }}
+            onNotificationClick={(notif) => {
+              if (
+                notif.type === "ESCALATION_BREACH" ||
+                notif.type === "incident_escalated" ||
+                notif.type === "incident_reopened"
+              ) {
+                setActiveTab("escalations");
+              }
+            }}
+          />
           <div className="flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
             <Shield className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-semibold text-slate-200">{dashboard.admin.role}</span>

@@ -4,6 +4,7 @@ export interface INotification extends Document {
   organizationId: Types.ObjectId;
   recipientId: Types.ObjectId;
   incidentId?: Types.ObjectId;
+  complaintId?: Types.ObjectId;
   type: string;
   title: string;
   message: string;
@@ -30,6 +31,11 @@ const NotificationSchema = new Schema<INotification>(
     incidentId: {
       type: Schema.Types.ObjectId,
       ref: "Incident",
+      index: true,
+    },
+    complaintId: {
+      type: Schema.Types.ObjectId,
+      ref: "Complaint",
       index: true,
     },
     type: {

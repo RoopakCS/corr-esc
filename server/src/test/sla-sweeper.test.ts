@@ -207,7 +207,7 @@ describe("Ticket 07: Background SLA Sweeper & Supervisory Tier Escalation", () =
 
     // Find notification for organization admin
     const adminNotif = notifications.find(
-      (n) => n.recipientId.toString() === adminUserId
+      (n) => n.recipientId.toString() === adminUserId && n.type === "ESCALATION_BREACH"
     );
     expect(adminNotif).toBeDefined();
     expect(adminNotif?.priority).toBe("high");

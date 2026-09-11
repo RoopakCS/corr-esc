@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { CountdownTimer } from "../components/CountdownTimer.js";
 import { AuditTimeline } from "../components/AuditTimeline.js";
+import { NotificationCenter } from "../components/NotificationCenter.js";
 
 export function ComplainantPortal() {
   const { slug } = useParams<{ slug: string }>();
@@ -188,13 +189,31 @@ export function ComplainantPortal() {
               <span className="text-xs text-slate-400 font-mono">/org/{slug}</span>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center space-x-2 text-sm text-slate-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Sign Out</span>
-          </button>
+          <div className="flex items-center space-x-3">
+            <NotificationCenter
+              slug={slug || ""}
+              onRealtimeEvent={() => {
+                loadData();
+              }}
+              onNotificationClick={(notif) => {
+                if (notif.complaintId) {
+                  const element = document.getElementById(`complaint-${notif.complaintId}`);
+                  if (element) {
+                    element.scrollIntoView({ behavior: "smooth" });
+                    element.classList.add("ring-2", "ring-indigo-500");
+                    setTimeout(() => element.classList.remove("ring-2", "ring-indigo-500"), 3000);
+                  }
+                }
+              }}
+            />
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-2 text-sm text-slate-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -360,7 +379,8 @@ export function ComplainantPortal() {
                 {complaints.map((complaint) => (
                   <div
                     key={complaint.id}
-                    className="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg space-y-3"
+                    id={`complaint-${complaint.id}`}
+                    className="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg space-y-3 transition duration-300"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>

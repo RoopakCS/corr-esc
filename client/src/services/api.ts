@@ -765,6 +765,7 @@ export interface NotificationItem {
   organizationId: string;
   recipientId: string;
   incidentId?: string;
+  complaintId?: string;
   type: string;
   title: string;
   message: string;

@@ -839,6 +839,124 @@ describe("Frontend Client App", () => {
       expect(screen.getByText(/Incident marked as 'Still Not Fixed'/i)).toBeInTheDocument();
     });
   });
+
+  it("renders notification bell with unread badge and allows viewing, marking as read, and bulk marking all as read in drawer", async () => {
+    // Setup localStorage for Complainant
+    localStorage.setItem("corr_esc_token", "mock-comp-token");
+    window.history.pushState({}, "", "/org/campus/portal");
+
+    let notifications = [
+      {
+        id: "notif-1",
+        organizationId: "org-1",
+        recipientId: "user-comp",
+        incidentId: "inc-1",
+        type: "complaint_submitted",
+        title: "Complaint Received",
+        message: "Your complaint has been logged.",
+        priority: "normal" as const,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: "notif-2",
+        organizationId: "org-1",
+        recipientId: "user-comp",
+        incidentId: "inc-1",
+        type: "sla_contracted",
+        title: "SLA Contracted: Corroboration Added",
+        message: "Deadline contracted due to corroborating complaint.",
+        priority: "high" as const,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+
+    vi.spyOn(global, "fetch").mockImplementation((url, options) => {
+      const urlStr = url.toString();
+      const method = options?.method || "GET";
+
+      if (urlStr.includes("/complaints/my")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ complaints: [] }),
+        } as Response);
+      }
+
+      if (urlStr.includes("/categories")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ categories: [] }),
+        } as Response);
+      }
+
+      if (urlStr.includes("/notifications/mark-all-read") && method === "POST") {
+        notifications = notifications.map((n) => ({ ...n, isRead: true }));
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ message: "All notifications marked as read" }),
+        } as Response);
+      }
+
+      if (urlStr.match(/\/notifications\/[^/]+\/read/) && method === "PATCH") {
+        const idMatch = urlStr.match(/\/notifications\/([^/]+)\/read/);
+        const targetId = idMatch ? idMatch[1] : "";
+        notifications = notifications.map((n) =>
+          n.id === targetId ? { ...n, isRead: true } : n
+        );
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ notification: { id: targetId, isRead: true } }),
+        } as Response);
+      }
+
+      if (urlStr.includes("/notifications")) {
+        const unreadCount = notifications.filter((n) => !n.isRead).length;
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              notifications,
+              unreadCount,
+            }),
+        } as Response);
+      }
+
+      return Promise.reject(new Error(`Unhandled URL: ${urlStr} ${method}`));
+    });
+
+    render(<App />);
+
+    // 1. Verify unread badge count is displayed
+    await waitFor(() => {
+      expect(screen.getByTestId("notification-unread-badge")).toHaveTextContent("2");
+    });
+
+    // 2. Click bell to open notification drawer
+    fireEvent.click(screen.getByTestId("notification-bell"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("notification-drawer")).toBeInTheDocument();
+      expect(screen.getByText("Complaint Received")).toBeInTheDocument();
+      expect(screen.getByText("SLA Contracted: Corroboration Added")).toBeInTheDocument();
+    });
+
+    // 3. Mark single notification as read
+    const markReadBtn = screen.getByTestId("mark-read-notif-1");
+    fireEvent.click(markReadBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("notification-unread-badge")).toHaveTextContent("1");
+    });
+
+    // 4. Mark all as read
+    const markAllBtn = screen.getByTestId("mark-all-read-btn");
+    fireEvent.click(markAllBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("notification-unread-badge")).not.toBeInTheDocument();
+    });
+  });
 });
 
 

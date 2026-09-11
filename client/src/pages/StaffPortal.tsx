@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { CountdownTimer } from "../components/CountdownTimer.js";
 import { AuditTimeline } from "../components/AuditTimeline.js";
+import { NotificationCenter } from "../components/NotificationCenter.js";
 
 export function StaffPortal() {
   const { slug } = useParams<{ slug: string }>();
@@ -283,13 +284,43 @@ export function StaffPortal() {
           </div>
         </div>
 
-        <button
-          onClick={handleLogout}
-          className="flex items-center space-x-2 text-sm text-slate-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition"
-        >
-          <LogOut className="w-4 h-4" />
-          <span>Sign Out</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <NotificationCenter
+            slug={slug || ""}
+            onRealtimeEvent={() => {
+              loadIncidents();
+              if (selectedIncident) {
+                getIncidentDetails(slug || "", selectedIncident.id)
+                  .then((res) => {
+                    setSelectedIncident(res.incident);
+                    setAttachedComplaints(res.complaints);
+                  })
+                  .catch(() => {});
+              }
+            }}
+            onNotificationClick={(notif) => {
+              if (notif.incidentId) {
+                const found = incidents.find((inc) => inc.id === notif.incidentId);
+                if (found) {
+                  openDetails(found);
+                } else if (slug) {
+                  getIncidentDetails(slug, notif.incidentId)
+                    .then((res) => {
+                      openDetails(res.incident);
+                    })
+                    .catch(() => {});
+                }
+              }
+            }}
+          />
+          <button
+            onClick={handleLogout}
+            className="flex items-center space-x-2 text-sm text-slate-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Sign Out</span>
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}

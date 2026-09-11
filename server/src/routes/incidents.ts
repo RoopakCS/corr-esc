@@ -10,6 +10,7 @@ import { verifyAuth, requireOrgAccess } from "../middleware/auth.js";
 import { computeComplaintSimilarity } from "../services/similarity.js";
 import { calculateContractedDeadline } from "../services/sla.js";
 import { resolveSupervisor } from "../services/slaSweeper.js";
+import { broadcastOrgEvent } from "../services/realtime.js";
 
 export const incidentsRouter = Router({ mergeParams: true });
 
@@ -81,6 +82,13 @@ function formatComplaint(complaint: IComplaint | any) {
     createdAt: complaint.createdAt,
     updatedAt: complaint.updatedAt,
   };
+}
+
+async function getAttachedComplainantIds(
+  incidentId: mongoose.Types.ObjectId | string
+): Promise<string[]> {
+  const attached = await Complaint.find({ incidentId });
+  return Array.from(new Set(attached.map((c) => c.complainantId.toString())));
 }
 
 const ACTIVE_INCIDENT_STATUSES: IncidentStatus[] = ["New", "Assigned", "In Progress"];
@@ -304,6 +312,27 @@ incidentsRouter.patch(
       return;
     }
 
+    // Notify attached complainants
+    const uniqueComplainantIds = await getAttachedComplainantIds(incident._id);
+
+    for (const complainantId of uniqueComplainantIds) {
+      await Notification.create({
+        organizationId: req.organization._id,
+        recipientId: new mongoose.Types.ObjectId(complainantId),
+        incidentId: incident._id,
+        type: "incident_assigned",
+        title: "Staff Assigned to Incident",
+        message: `Staff member ${staffUser.name} has claimed and been assigned to Incident #${incident._id.toString().slice(-6)}.`,
+        priority: "normal",
+        isRead: false,
+      });
+    }
+
+    // Broadcast real-time event
+    broadcastOrgEvent(req.organization._id.toString(), "incident:claimed", {
+      incident: formatIncident(incident),
+    });
+
     res.status(200).json({
       incident: formatIncident(incident),
     });
@@ -384,10 +413,7 @@ incidentsRouter.patch(
       incident.gracePeriodExpiresAt = new Date(Date.now() + 24 * 3600 * 1000);
 
       // Find all complaints attached to this incident and notify attached complainants
-      const attachedComplaints = await Complaint.find({ incidentId: incident._id });
-      const uniqueComplainantIds = Array.from(
-        new Set(attachedComplaints.map((c) => c.complainantId.toString()))
-      );
+      const uniqueComplainantIds = await getAttachedComplainantIds(incident._id);
 
       for (const complainantId of uniqueComplainantIds) {
         await Notification.create({
@@ -411,6 +437,10 @@ incidentsRouter.patch(
     await incident.populate("categoryId");
     await incident.populate("assigneeId");
     await incident.populate("supervisorId");
+
+    broadcastOrgEvent(req.organization._id.toString(), "incident:status_updated", {
+      incident: formatIncident(incident),
+    });
 
     res.status(200).json({
       incident: formatIncident(incident),
@@ -508,10 +538,13 @@ incidentsRouter.post(
     await incident.populate("assigneeId");
     await incident.populate("supervisorId");
 
-    // Dispatch urgent alert to designated supervisor and admin
+    // Dispatch urgent alert to designated supervisor, assignee, and admin
     const recipientsToAlert = new Set<string>();
     if (supervisor) {
       recipientsToAlert.add(supervisor._id.toString());
+    }
+    if (incident.assigneeId) {
+      recipientsToAlert.add(incident.assigneeId._id ? incident.assigneeId._id.toString() : incident.assigneeId.toString());
     }
     const adminUser = await User.findOne({
       organizationId: req.organization._id,
@@ -535,6 +568,10 @@ incidentsRouter.post(
         isRead: false,
       });
     }
+
+    broadcastOrgEvent(req.organization._id.toString(), "incident:reopened", {
+      incident: formatIncident(incident),
+    });
 
     res.status(200).json({
       incident: formatIncident(incident),
@@ -592,6 +629,23 @@ incidentsRouter.post(
     await incident.populate("categoryId");
     await incident.populate("assigneeId");
     await incident.populate("supervisorId");
+
+    if (incident.assigneeId) {
+      await Notification.create({
+        organizationId: req.organization._id,
+        recipientId: incident.assigneeId._id || incident.assigneeId,
+        incidentId: incident._id,
+        type: "incident_confirmed",
+        title: "Resolution Confirmed",
+        message: `Incident #${incident._id.toString().slice(-6)} resolution has been confirmed and the incident is now closed.`,
+        priority: "normal",
+        isRead: false,
+      });
+    }
+
+    broadcastOrgEvent(req.organization._id.toString(), "incident:closed", {
+      incident: formatIncident(incident),
+    });
 
     res.status(200).json({
       incident: formatIncident(incident),
@@ -677,6 +731,38 @@ incidentsRouter.patch(
     await incident.populate("categoryId");
     await incident.populate("assigneeId");
     await incident.populate("supervisorId");
+
+    // 1. Notify newly assigned staff member
+    await Notification.create({
+      organizationId: req.organization._id,
+      recipientId: targetStaff._id,
+      incidentId: incident._id,
+      type: "incident_assigned",
+      title: "Incident Reassigned to You",
+      message: `Incident #${incident._id.toString().slice(-6)} has been reassigned to you.`,
+      priority: "normal",
+      isRead: false,
+    });
+
+    // 2. Notify attached complainants
+    const compIds = await getAttachedComplainantIds(incident._id);
+    for (const compId of compIds) {
+      await Notification.create({
+        organizationId: req.organization._id,
+        recipientId: new mongoose.Types.ObjectId(compId),
+        incidentId: incident._id,
+        type: "incident_assigned",
+        title: "Staff Reassigned",
+        message: `Staff member ${targetStaff.name} has been assigned to Incident #${incident._id.toString().slice(-6)}.`,
+        priority: "normal",
+        isRead: false,
+      });
+    }
+
+    // 3. Broadcast real-time event
+    broadcastOrgEvent(req.organization._id.toString(), "incident:reassigned", {
+      incident: formatIncident(incident),
+    });
 
     res.status(200).json({
       incident: formatIncident(incident),
@@ -1009,6 +1095,74 @@ incidentsRouter.post(
     await incidentToReturn.populate("supervisorId");
 
     const attachedComplaints = await Complaint.find({ incidentId: incident._id });
+
+    // Notify merged complainant
+    await Notification.create({
+      organizationId: req.organization._id,
+      recipientId: complaint.complainantId,
+      incidentId: incident._id,
+      complaintId: complaint._id,
+      type: "complaint_merged",
+      title: "Complaint Corroborated and Merged",
+      message: `Your complaint "${complaint.title}" has been corroborated and merged into Incident #${incident._id.toString().slice(-6)}.`,
+      priority: "normal",
+      isRead: false,
+    });
+
+    // If incident has an assignee, notify assignee of dynamic SLA contraction; otherwise notify admins
+    if (incidentToReturn.assigneeId) {
+      const assigneeUserId = (incidentToReturn.assigneeId as any)._id || incidentToReturn.assigneeId;
+      await Notification.create({
+        organizationId: req.organization._id,
+        recipientId: assigneeUserId,
+        incidentId: incident._id,
+        complaintId: complaint._id,
+        type: "sla_contracted",
+        title: "SLA Contracted: Corroboration Added",
+        message: `A new corroborating complaint "${complaint.title}" was merged into Incident #${incident._id.toString().slice(-6)}. The SLA deadline has been contracted to ${newDeadline.toISOString()}.`,
+        priority: "high",
+        isRead: false,
+      });
+    } else {
+      const admins = await User.find({ organizationId: req.organization._id, role: "Admin" });
+      for (const admin of admins) {
+        await Notification.create({
+          organizationId: req.organization._id,
+          recipientId: admin._id,
+          incidentId: incident._id,
+          complaintId: complaint._id,
+          type: "sla_contracted",
+          title: "SLA Contracted: Corroboration Added",
+          message: `A new corroborating complaint "${complaint.title}" was merged into Incident #${incident._id.toString().slice(-6)}. The SLA deadline has been contracted to ${newDeadline.toISOString()}.`,
+          priority: "high",
+          isRead: false,
+        });
+      }
+    }
+
+    // Also notify previously attached complainants that their incident resolution deadline contracted
+    const existingComplainantIds = await getAttachedComplainantIds(incident._id);
+    for (const compId of existingComplainantIds) {
+      if (compId !== complaint.complainantId.toString()) {
+        await Notification.create({
+          organizationId: req.organization._id,
+          recipientId: new mongoose.Types.ObjectId(compId),
+          incidentId: incident._id,
+          complaintId: complaint._id,
+          type: "sla_contracted",
+          title: "Resolution Accelerated",
+          message: `A corroborating complaint was added to your Incident #${incident._id.toString().slice(-6)}, accelerating resolution deadline to ${newDeadline.toISOString()}.`,
+          priority: "normal",
+          isRead: false,
+        });
+      }
+    }
+
+    // Broadcast real-time event
+    broadcastOrgEvent(req.organization._id.toString(), "incident:merged", {
+      incident: formatIncident(incidentToReturn),
+      complaintId: complaint._id.toString(),
+    });
 
     res.status(200).json({
       incident: formatIncident(incidentToReturn),
