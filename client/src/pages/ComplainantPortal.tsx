@@ -173,7 +173,10 @@ export function ComplainantPortal() {
 
   // Find any complaints currently in "Resolved" status awaiting 24-hour verification
   const pendingVerificationComplaints = complaints.filter(
-    (c) => c.incident?.status === "Resolved"
+    (c) =>
+      c.incident?.status === "Resolved" &&
+      (!c.incident.gracePeriodExpiresAt ||
+        new Date(c.incident.gracePeriodExpiresAt).getTime() > Date.now())
   );
 
   if (loading) {
@@ -203,9 +206,6 @@ export function ComplainantPortal() {
                 <h1 className="text-base sm:text-lg font-bold tracking-tight text-white leading-none">
                   Complainant Portal
                 </h1>
-                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  Active Session
-                </span>
               </div>
               <span className="text-xs text-slate-400 font-mono">/org/{slug}</span>
             </div>
@@ -255,7 +255,7 @@ export function ComplainantPortal() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Grievance Submission Composer */}
+          {/* Left Column: Complaint Submission Composer */}
           <div className="lg:col-span-5">
             <div className="bg-obsidian-surface/95 border border-obsidian-border rounded-2xl p-6 shadow-elevated sticky top-24 space-y-5">
               <div>
@@ -424,7 +424,7 @@ export function ComplainantPortal() {
                   />
                 </div>
 
-                {/* Photo Attachment URL */}
+                {/* Photo Attachment URL & Evidence Dropzone */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label
@@ -433,20 +433,25 @@ export function ComplainantPortal() {
                     >
                       Photo Attachment URL (Optional)
                     </label>
-                    <span className="text-[10px] text-slate-500">Image link</span>
+                    <span className="text-[10px] text-slate-500">Image evidence</span>
                   </div>
-                  <div className="relative">
-                    <input
-                      id="photo-url"
-                      type="url"
-                      value={formData.photoUrl}
-                      onChange={(e) =>
-                        setFormData({ ...formData, photoUrl: e.target.value })
-                      }
-                      placeholder="https://example.com/photo.jpg"
-                      className="block w-full pl-9 pr-3.5 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-xs text-slate-100 placeholder-slate-500 focus-ring transition-all duration-200 font-mono"
-                    />
-                    <ImageIcon className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                  <div className="border border-dashed border-obsidian-border hover:border-obsidian-subtle rounded-xl p-3 bg-obsidian/60 transition-all duration-200 space-y-2">
+                    <div className="relative">
+                      <input
+                        id="photo-url"
+                        type="url"
+                        value={formData.photoUrl}
+                        onChange={(e) =>
+                          setFormData({ ...formData, photoUrl: e.target.value })
+                        }
+                        placeholder="https://example.com/photo.jpg"
+                        className="block w-full pl-9 pr-3.5 py-2 bg-obsidian border border-obsidian-border rounded-lg text-xs text-slate-100 placeholder-slate-500 focus-ring transition-all duration-200 font-mono"
+                      />
+                      <ImageIcon className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                    </div>
+                    <p className="text-[10px] text-slate-500 text-center">
+                      Paste a direct image URL for physical repair evidence verification
+                    </p>
                   </div>
 
                   {/* Visual Thumbnail Preview */}
@@ -522,28 +527,28 @@ export function ComplainantPortal() {
                 </div>
 
                 <div className="space-y-3 pt-1">
-                  {pendingVerificationComplaints.map((item) => (
+                  {pendingVerificationComplaints.map((pendingComplaint) => (
                     <div
-                      key={item.id}
+                      key={pendingComplaint.id}
                       className="p-3.5 rounded-xl bg-obsidian/80 border border-purple-500/30 space-y-3"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
                           <span className="text-xs font-semibold text-slate-200">
-                            {item.title}
+                            {pendingComplaint.title}
                           </span>
                           <span className="block text-[11px] text-slate-400 font-mono">
-                            Category: {item.categoryName || "General"}
+                            Category: {pendingComplaint.categoryName || "General"}
                           </span>
                         </div>
 
-                        {item.incident?.gracePeriodExpiresAt && (
+                        {pendingComplaint.incident?.gracePeriodExpiresAt && (
                           <div className="flex items-center gap-1.5 text-xs text-purple-300 font-mono tabular-nums">
                             <Clock className="w-3.5 h-3.5" />
                             <span>Grace window:</span>
                             <CountdownTimer
-                              deadline={item.incident.gracePeriodExpiresAt}
-                              createdAt={item.incident.createdAt || item.createdAt}
+                              deadline={pendingComplaint.incident.gracePeriodExpiresAt}
+                              createdAt={pendingComplaint.incident.createdAt || pendingComplaint.createdAt}
                               compact
                             />
                           </div>
@@ -553,11 +558,11 @@ export function ComplainantPortal() {
                       <div className="space-y-2 pt-1">
                         <input
                           type="text"
-                          value={contestFeedback[item.incidentId] || ""}
+                          value={contestFeedback[pendingComplaint.incidentId] || ""}
                           onChange={(e) =>
                             setContestFeedback({
                               ...contestFeedback,
-                              [item.incidentId]: e.target.value,
+                              [pendingComplaint.incidentId]: e.target.value,
                             })
                           }
                           placeholder="Optional explanation of why the issue is still not fixed..."
@@ -567,7 +572,7 @@ export function ComplainantPortal() {
                         <div className="flex flex-wrap items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => handleConfirmResolution(item.incidentId)}
+                            onClick={() => handleConfirmResolution(pendingComplaint.incidentId)}
                             disabled={actionLoading}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow pressable transition-all duration-200"
                           >
@@ -577,7 +582,7 @@ export function ComplainantPortal() {
 
                           <button
                             type="button"
-                            onClick={() => handleContest(item.incidentId)}
+                            onClick={() => handleContest(pendingComplaint.incidentId)}
                             disabled={actionLoading}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow pressable transition-all duration-200"
                           >

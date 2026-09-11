@@ -104,7 +104,7 @@ describe("ComplainantPortal Component", () => {
     });
   });
 
-  it("allows user to verify resolution and calls confirmIncidentResolution", async () => {
+  it("allows complainant to verify resolution and calls confirmIncidentResolution", async () => {
     const confirmSpy = vi.spyOn(api, "confirmIncidentResolution").mockResolvedValue({
       id: "inc-1",
       categoryId: "cat-plumbing",
@@ -129,7 +129,7 @@ describe("ComplainantPortal Component", () => {
     });
   });
 
-  it("allows user to contest resolution with feedback, reopening the incident", async () => {
+  it("allows complainant to contest resolution with feedback, reopening the incident", async () => {
     const contestSpy = vi.spyOn(api, "contestIncident").mockResolvedValue({
       id: "inc-1",
       categoryId: "cat-plumbing",
