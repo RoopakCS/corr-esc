@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { login } from "../services/api.js";
-import { LogIn, AlertCircle } from "lucide-react";
+import { LogIn, AlertCircle, User, Shield, Briefcase, ArrowLeft } from "lucide-react";
 
 export function Login() {
   const { slug } = useParams<{ slug: string }>();
@@ -34,33 +34,52 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-white">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <div className="bg-indigo-600 p-3 rounded-2xl shadow-lg shadow-indigo-500/30">
-            <LogIn className="w-8 h-8 text-white" />
+    <div className="min-h-screen bg-obsidian text-slate-100 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md space-y-6">
+        <div className="text-center space-y-3">
+          <div className="inline-flex p-3 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 shadow-surface">
+            <LogIn className="w-7 h-7" />
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">
+            Sign in to Organization
+          </h1>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-obsidian-surface border border-obsidian-border text-xs font-mono text-indigo-400">
+            <span>/org/{slug}</span>
           </div>
         </div>
-        <h2 className="mt-4 text-center text-3xl font-extrabold tracking-tight">
-          Sign in to Organization
-        </h2>
-        <p className="mt-2 text-center text-sm text-slate-400">
-          Organization: <span className="font-semibold text-indigo-400">/org/{slug}</span>
-        </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-slate-800 border border-slate-700 py-8 px-6 shadow-2xl rounded-2xl sm:px-10">
+        <div className="bg-obsidian-surface/95 border border-obsidian-border py-8 px-6 shadow-elevated rounded-2xl sm:px-8 space-y-6">
+          {/* Role access directory pill */}
+          <div className="p-3 rounded-xl bg-obsidian-muted border border-obsidian-border text-[11px] text-slate-400 space-y-1.5">
+            <span className="font-semibold text-slate-300 block uppercase tracking-wider text-[10px]">
+              Universal Portal Access
+            </span>
+            <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
+              <div className="p-1.5 rounded-lg bg-obsidian border border-obsidian-border/60">
+                <User className="w-3 h-3 mx-auto mb-1 text-slate-400" />
+                <span>Complainant</span>
+              </div>
+              <div className="p-1.5 rounded-lg bg-obsidian border border-obsidian-border/60">
+                <Briefcase className="w-3 h-3 mx-auto mb-1 text-slate-400" />
+                <span>Staff Pool</span>
+              </div>
+              <div className="p-1.5 rounded-lg bg-obsidian border border-obsidian-border/60">
+                <Shield className="w-3 h-3 mx-auto mb-1 text-slate-400" />
+                <span>Admin Console</span>
+              </div>
+            </div>
+          </div>
+
           {error && (
-            <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-red-300 font-medium">{error}</p>
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start space-x-3 text-xs font-medium text-rose-300">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-sm font-medium text-slate-200">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Email Address
               </label>
               <input
@@ -69,12 +88,12 @@ export function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@organization.com"
-                className="mt-1 block w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-tactile"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-200">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Password
               </label>
               <input
@@ -83,33 +102,36 @@ export function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="mt-1 block w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-tactile"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition"
+              className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 focus-ring pressable shadow-lg shadow-indigo-600/20 disabled:opacity-50 transition-all duration-tactile"
             >
               {loading ? "Authenticating..." : "Sign In"}
             </button>
           </form>
 
-          <div className="mt-6 space-y-2 text-center text-xs text-slate-400">
+          <div className="pt-4 border-t border-obsidian-border flex flex-col space-y-2 text-center text-xs text-slate-400">
             <div>
-              Filing a complaint as a complainant?{" "}
+              <span>New complainant? </span>
               <Link
                 to={`/org/${slug}/register`}
-                className="text-emerald-400 hover:text-emerald-300 underline font-medium"
+                className="text-indigo-400 hover:text-indigo-300 font-semibold transition"
               >
-                Register here
+                Register Account
               </Link>
             </div>
             <div>
-              Need a new organization?{" "}
-              <Link to="/" className="text-indigo-400 hover:text-indigo-300 underline font-medium">
-                Create organization
+              <Link
+                to="/"
+                className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-400 transition text-[11px]"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                <span>Switch or create another organization</span>
               </Link>
             </div>
           </div>

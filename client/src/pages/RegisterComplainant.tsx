@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { registerComplainant } from "../services/api.js";
-import { UserPlus, AlertCircle } from "lucide-react";
+import { UserPlus, AlertCircle, ShieldCheck, ArrowLeft } from "lucide-react";
 
 export function RegisterComplainant() {
   const { slug } = useParams<{ slug: string }>();
@@ -42,33 +42,39 @@ export function RegisterComplainant() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-white">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <div className="bg-emerald-600 p-3 rounded-2xl shadow-lg shadow-emerald-500/30">
-            <UserPlus className="w-8 h-8 text-white" />
+    <div className="min-h-screen bg-obsidian text-slate-100 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md space-y-6">
+        <div className="text-center space-y-3">
+          <div className="inline-flex p-3 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 shadow-surface">
+            <UserPlus className="w-7 h-7" />
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">
+            Complainant Registration
+          </h1>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-obsidian-surface border border-obsidian-border text-xs font-mono text-emerald-400">
+            <span>/org/{slug}</span>
           </div>
         </div>
-        <h2 className="mt-4 text-center text-3xl font-extrabold tracking-tight">
-          Complainant Registration
-        </h2>
-        <p className="mt-2 text-center text-sm text-slate-400">
-          Organization: <span className="font-semibold text-emerald-400">/org/{slug}</span>
-        </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-slate-800 border border-slate-700 py-8 px-6 shadow-2xl rounded-2xl sm:px-10">
+        {/* Privacy reassurance callout */}
+        <div className="p-3.5 rounded-xl bg-obsidian-surface border border-obsidian-border text-xs text-slate-300 flex items-start gap-3 shadow-surface">
+          <ShieldCheck className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+          <p className="leading-relaxed text-[11px] text-slate-400">
+            <span className="font-semibold text-slate-200">Blind Complaint Ingestion:</span> All submitted reports are processed independently without public exposure, ensuring unbiased SLA clustering and dynamic acceleration.
+          </p>
+        </div>
+
+        <div className="bg-obsidian-surface/95 border border-obsidian-border py-8 px-6 shadow-elevated rounded-2xl sm:px-8 space-y-6">
           {error && (
-            <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-red-300 font-medium">{error}</p>
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start space-x-3 text-xs font-medium text-rose-300">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-sm font-medium text-slate-200">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Full Name
               </label>
               <input
@@ -79,12 +85,12 @@ export function RegisterComplainant() {
                   setFormData({ ...formData, name: e.target.value })
                 }
                 placeholder="e.g. John Doe"
-                className="mt-1 block w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-tactile"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-200">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Email Address
               </label>
               <input
@@ -95,12 +101,12 @@ export function RegisterComplainant() {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 placeholder="you@domain.com"
-                className="mt-1 block w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-tactile"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-200">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Password
               </label>
               <input
@@ -112,12 +118,12 @@ export function RegisterComplainant() {
                   setFormData({ ...formData, password: e.target.value })
                 }
                 placeholder="••••••••"
-                className="mt-1 block w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-tactile"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-200">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Confirm Password
               </label>
               <input
@@ -129,27 +135,38 @@ export function RegisterComplainant() {
                   setFormData({ ...formData, confirmPassword: e.target.value })
                 }
                 placeholder="••••••••"
-                className="mt-1 block w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-tactile"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 transition"
+              className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 focus-ring pressable shadow-lg shadow-emerald-600/20 disabled:opacity-50 transition-all duration-tactile"
             >
-              {loading ? "Registering..." : "Create Complainant Account"}
+              {loading ? "Creating Account..." : "Create Complainant Account"}
             </button>
           </form>
 
-          <div className="mt-6 text-center text-xs text-slate-400">
-            Already have an account?{" "}
-            <Link
-              to={`/org/${slug}/login`}
-              className="text-emerald-400 hover:text-emerald-300 underline font-medium"
-            >
-              Sign in here
-            </Link>
+          <div className="pt-4 border-t border-obsidian-border text-center text-xs text-slate-400 space-y-2">
+            <div>
+              <span>Already have an account? </span>
+              <Link
+                to={`/org/${slug}/login`}
+                className="text-emerald-400 hover:text-emerald-300 font-semibold transition"
+              >
+                Sign In
+              </Link>
+            </div>
+            <div>
+              <Link
+                to="/"
+                className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-400 transition text-[11px]"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                <span>Return to organization setup</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
