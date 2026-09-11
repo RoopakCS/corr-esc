@@ -1,5 +1,5 @@
 import React from "react";
-import { History, ArrowDownRight, Clock, CheckCircle2 } from "lucide-react";
+import { History, ArrowDownRight, Clock, CheckCircle2, AlertTriangle, AlertCircle } from "lucide-react";
 import { ContractionAuditEntry } from "../services/api.js";
 
 export interface AuditTimelineProps {
@@ -19,6 +19,18 @@ export function formatDuration(ms: number): string {
   if (minutes > 0) parts.push(`${minutes}m`);
   if (parts.length === 0 && seconds > 0) parts.push(`${seconds}s`);
   return parts.join(" ") || "0m";
+}
+
+export function formatRelativeTime(dateInput: string | Date): string {
+  const diffMs = Date.now() - new Date(dateInput).getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  if (diffSecs < 60) return "Just now";
+  const diffMins = Math.floor(diffSecs / 60);
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
 }
 
 export const AuditTimeline: React.FC<AuditTimelineProps> = ({
@@ -45,29 +57,37 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({
           <span>SLA Contraction Audit Timeline ({entries.length})</span>
         </h4>
         <span className="text-[11px] text-slate-400 font-mono tabular-nums">
-          Mathematical decay: Remaining &times; (1 - &alpha;<sup>k</sup>)
+          Corroboration Engine
         </span>
       </div>
 
       <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-obsidian-border">
         {entries.map((entry, index) => {
           const isInitial = entry.contractedMs === 0 && entry.corroborationCount === 1;
+          const isPenalty = entry.contractedMs < 0 || (entry.complaintTitle && entry.complaintTitle.toLowerCase().includes("reopen"));
+          const isBreach = entry.complaintTitle && entry.complaintTitle.toLowerCase().includes("breach");
+
+          let NodeIcon = <ArrowDownRight className="w-3 h-3 text-indigo-400" />;
+          let nodeStyle = "bg-indigo-950/80 border-indigo-500 text-indigo-300 shadow-sm shadow-indigo-500/20";
+
+          if (isInitial) {
+            NodeIcon = <CheckCircle2 className="w-3 h-3 text-slate-400" />;
+            nodeStyle = "bg-obsidian-surface border-obsidian-border text-slate-400";
+          } else if (isPenalty) {
+            NodeIcon = <AlertTriangle className="w-3 h-3 text-amber-400" />;
+            nodeStyle = "bg-amber-950/80 border-amber-500 text-amber-300 shadow-sm shadow-amber-500/20";
+          } else if (isBreach) {
+            NodeIcon = <AlertCircle className="w-3 h-3 text-rose-400" />;
+            nodeStyle = "bg-rose-950/80 border-rose-500 text-rose-300 shadow-sm shadow-rose-500/20";
+          }
 
           return (
             <div key={entry.id || `${entry.complaintId}-${index}`} className="relative group">
               {/* Step indicator node */}
               <div
-                className={`absolute -left-6 top-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-tactile ${
-                  isInitial
-                    ? "bg-obsidian-surface border-obsidian-border text-slate-400"
-                    : "bg-indigo-950/80 border-indigo-500 text-indigo-300 shadow-sm shadow-indigo-500/20"
-                }`}
+                className={`absolute -left-6 top-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-tactile ${nodeStyle}`}
               >
-                {isInitial ? (
-                  <CheckCircle2 className="w-3 h-3 text-slate-400" />
-                ) : (
-                  <ArrowDownRight className="w-3 h-3 text-indigo-400" />
-                )}
+                {NodeIcon}
               </div>
 
               {/* Event card */}
@@ -77,6 +97,10 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({
                     <span className="text-xs font-bold text-slate-100">
                       {isInitial ? (
                         "Baseline SLA Established"
+                      ) : isPenalty ? (
+                        `Reopen Escalation Penalty Applied`
+                      ) : isBreach ? (
+                        `SLA Tier Escalation Breach`
                       ) : (
                         `Corroboration #${entry.corroborationCount} Attached`
                       )}
@@ -91,17 +115,25 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({
                       <span className="px-2 py-0.5 bg-obsidian-muted border border-obsidian-border text-slate-300 rounded-md text-[10px] font-semibold">
                         Initial Complaint
                       </span>
+                    ) : isPenalty ? (
+                      <span className="px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-md text-[10px] font-bold font-mono tabular-nums">
+                        +1 Tier Penalty
+                      </span>
                     ) : (
                       <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-md text-[10px] font-bold font-mono tabular-nums">
                         -{formatDuration(entry.contractedMs)} Contracted
                       </span>
                     )}
                     <div className="text-[10px] text-slate-400 font-mono tabular-nums mt-1">
-                      {new Date(entry.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                      })}
+                      <span>{formatRelativeTime(entry.createdAt)}</span>
+                      <span className="mx-1 text-slate-600">&bull;</span>
+                      <span>
+                        {new Date(entry.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
+                      </span>
                     </div>
                   </div>
                 </div>

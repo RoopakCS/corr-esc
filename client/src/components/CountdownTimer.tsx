@@ -9,31 +9,27 @@ export interface CountdownTimerProps {
   className?: string;
 }
 
-export type TimerSeverity = "normal" | "warning" | "imminent";
+export type TimerSeverity = "safe" | "warning" | "breached";
 
 export function getTimerSeverity(
   remainingMs: number,
   totalDurationMs?: number
 ): TimerSeverity {
-  // Red for imminent breach (< 5% time remaining or breached <= 0)
+  // Overdue / breached
   if (remainingMs <= 0) {
-    return "imminent";
+    return "breached";
   }
 
   if (totalDurationMs && totalDurationMs > 0) {
     const ratio = remainingMs / totalDurationMs;
-    if (ratio < 0.05) {
-      return "imminent";
-    }
-    // Amber for < 25% remaining
+    // Amber warning for < 25% remaining
     if (ratio < 0.25) {
       return "warning";
     }
-    // Green for normal
-    return "normal";
+    return "safe";
   }
 
-  return "normal";
+  return "safe";
 }
 
 export function formatCountdownTime(remainingMs: number): string {
@@ -50,7 +46,7 @@ export function formatCountdownTime(remainingMs: number): string {
   const pad = (n: number) => n.toString().padStart(2, "0");
 
   if (days > 0) {
-    return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    return `${pad(days)}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   }
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 }
@@ -82,7 +78,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
 
   const ratio = totalDurationMs && totalDurationMs > 0
     ? Math.min(1, Math.max(0, remainingMs / totalDurationMs))
-    : remainingMs <= 0 ? 0 : 1;
+    : 0;
 
   const themeMap: Record<
     TimerSeverity,
@@ -95,12 +91,12 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
       icon: React.ReactNode;
     }
   > = {
-    normal: {
+    safe: {
       badgeBg: "bg-emerald-500/10 border-emerald-500/30",
       badgeText: "text-emerald-400",
       dot: "bg-emerald-400 shadow-sm shadow-emerald-500/50",
       barFill: "bg-emerald-500",
-      label: "Normal",
+      label: "Safe SLA",
       icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />,
     },
     warning: {
@@ -111,12 +107,12 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
       label: "< 25% Time Remaining",
       icon: <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />,
     },
-    imminent: {
+    breached: {
       badgeBg: "bg-rose-500/10 border-rose-500/30",
       badgeText: "text-rose-400 animate-pulse",
       dot: "bg-rose-400 shadow-sm shadow-rose-500/50 animate-ping",
       barFill: "bg-rose-500",
-      label: "Imminent Breach",
+      label: "SLA Breached",
       icon: <AlertCircle className="w-3.5 h-3.5 text-rose-400" />,
     },
   };
@@ -126,6 +122,9 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
   if (compact) {
     return (
       <div
+        role="timer"
+        aria-live="polite"
+        aria-label={`SLA countdown: ${formattedTime}, status: ${theme.label}`}
         data-testid="countdown-timer"
         data-severity={severity}
         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-mono font-medium tabular-nums ${theme.badgeBg} ${theme.badgeText} ${className}`}
@@ -139,6 +138,9 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
 
   return (
     <div
+      role="timer"
+      aria-live="polite"
+      aria-label={`SLA countdown: ${formattedTime}, status: ${theme.label}`}
       data-testid="countdown-timer"
       data-severity={severity}
       className={`rounded-xl p-3.5 border space-y-2.5 bg-obsidian-surface/95 border-obsidian-border shadow-surface transition-all duration-smooth hover:border-obsidian-subtle ${className}`}
