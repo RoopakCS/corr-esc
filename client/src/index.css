@@ -5,30 +5,24 @@
 @layer base {
   body {
     margin: 0;
-    @apply bg-obsidian text-slate-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200;
-    font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-      Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    @apply bg-obsidian text-slate-100 font-sans antialiased;
   }
 
-  /* Monospace figures for tabular data */
-  .tabular-nums {
-    font-variant-numeric: tabular-nums;
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-semibold text-slate-100;
   }
 
-  /* Custom subtle scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  p {
+    @apply leading-relaxed;
   }
-  ::-webkit-scrollbar-track {
-    background: #0A0C10;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #252C3D;
-    border-radius: 9999px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #3A455E;
+
+  /* Base interactive focus indicator standards */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  a:focus-visible {
+    @apply outline-none ring-2 ring-sky-500/70 ring-offset-2 ring-offset-obsidian;
   }
 }
 
@@ -41,10 +35,10 @@
   }
 
   .focus-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian;
   }
 
   .pressable {
-    @apply transition-all duration-200 active:scale-[0.98];
+    @apply transition-all duration-tactile active:scale-[0.98];
   }
 }

@@ -14,7 +14,36 @@ export default {
           muted: "#161B26",
           subtle: "#2A3245",
         },
-        status: {
+        // Incident operational lifecycle phase (CONTEXT.md)
+        lifecycle: {
+          new: {
+            DEFAULT: "#38BDF8", // sky-400
+            bg: "rgba(56, 189, 248, 0.12)",
+            border: "rgba(56, 189, 248, 0.3)",
+          },
+          assigned: {
+            DEFAULT: "#FBBF24", // amber-400
+            bg: "rgba(251, 191, 36, 0.12)",
+            border: "rgba(251, 191, 36, 0.3)",
+          },
+          inProgress: {
+            DEFAULT: "#60A5FA", // blue-400
+            bg: "rgba(96, 165, 250, 0.12)",
+            border: "rgba(96, 165, 250, 0.3)",
+          },
+          resolved: {
+            DEFAULT: "#34D399", // emerald-400
+            bg: "rgba(52, 211, 153, 0.12)",
+            border: "rgba(52, 211, 153, 0.3)",
+          },
+          closed: {
+            DEFAULT: "#94A3B8", // slate-400
+            bg: "rgba(148, 163, 184, 0.12)",
+            border: "rgba(148, 163, 184, 0.3)",
+          },
+        },
+        // SLA Urgency & Contraction Metrics
+        slaUrgency: {
           safe: {
             DEFAULT: "#10B981",
             bg: "rgba(16, 185, 129, 0.12)",
@@ -30,15 +59,10 @@ export default {
             bg: "rgba(239, 68, 68, 0.12)",
             border: "rgba(239, 68, 68, 0.3)",
           },
-          cobalt: {
-            DEFAULT: "#3B82F6",
-            bg: "rgba(59, 130, 246, 0.12)",
-            border: "rgba(59, 130, 246, 0.3)",
-          },
-          violet: {
-            DEFAULT: "#6366F1",
-            bg: "rgba(99, 102, 241, 0.12)",
-            border: "rgba(99, 102, 241, 0.3)",
+          corroboration: {
+            DEFAULT: "#818CF8",
+            bg: "rgba(129, 140, 248, 0.12)",
+            border: "rgba(129, 140, 248, 0.3)",
           },
         },
       },
@@ -63,13 +87,16 @@ export default {
           "monospace",
         ],
       },
-      boxShadow: {
-        glowSafe: "0 0 20px -3px rgba(16, 185, 129, 0.25)",
-        glowWarning: "0 0 20px -3px rgba(245, 158, 11, 0.25)",
-        glowBreached: "0 0 20px -3px rgba(239, 68, 68, 0.3)",
-        glowViolet: "0 0 20px -3px rgba(99, 102, 241, 0.25)",
-        surface: "0 4px 20px -2px rgba(0, 0, 0, 0.4)",
-        elevated: "0 10px 30px -5px rgba(0, 0, 0, 0.6)",
+      letterSpacing: {
+        tighter: "-0.04em",
+        tight: "-0.02em",
+      },
+      maxWidth: {
+        prose: "65ch",
+      },
+      transitionDuration: {
+        tactile: "200ms",
+        smooth: "300ms",
       },
     },
   },
