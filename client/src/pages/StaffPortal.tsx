@@ -32,6 +32,7 @@ import {
   GitMerge,
   Search,
   Sparkles,
+  Clock,
 } from "lucide-react";
 import { CountdownTimer } from "../components/CountdownTimer.js";
 import { AuditTimeline } from "../components/AuditTimeline.js";
@@ -199,6 +200,23 @@ export function StaffPortal() {
     }
   };
 
+  const handleResolve = async (incidentId: string) => {
+    if (!slug) return;
+    setActionLoading(true);
+    setDetailsError(null);
+
+    try {
+      const updated = await updateIncidentStatus(slug, incidentId, "Resolved");
+      setSelectedIncident(updated);
+      setActionSuccess("Incident marked as Resolved. 24-hour verification grace period initiated.");
+      await loadIncidents();
+    } catch (err: any) {
+      setDetailsError(err.message || "Failed to mark incident as resolved");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleReassign = async (incidentId: string) => {
     if (!slug || !selectedReassignee) return;
     setReassignLoading(true);
@@ -358,6 +376,22 @@ export function StaffPortal() {
                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-semibold">
                       <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
                       <span>Supervisory Oversight Required (Tier {incident.escalationTier})</span>
+                    </div>
+                  )}
+
+                  {/* Resolution Grace Period Badge */}
+                  {incident.status === "Resolved" && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs font-semibold">
+                      <Clock className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+                      <span>Resolution Grace Period Active (24h)</span>
+                    </div>
+                  )}
+
+                  {/* Contested Reopen Penalty Badge */}
+                  {Boolean(incident.reopenCount && incident.reopenCount > 0) && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-semibold">
+                      <AlertCircle className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+                      <span>Contested Resolution ({incident.reopenCount}x penalty)</span>
                     </div>
                   )}
 
@@ -774,8 +808,32 @@ export function StaffPortal() {
                 )}
 
                 {selectedIncident.status === "In Progress" && (
-                  <span className="text-xs px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-medium">
-                    Work Currently In Progress
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-medium">
+                      Work Currently In Progress
+                    </span>
+                    <button
+                      onClick={() => handleResolve(selectedIncident.id)}
+                      disabled={actionLoading}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-xs shadow-lg shadow-emerald-600/30 transition"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{actionLoading ? "Resolving..." : "Mark as Resolved"}</span>
+                    </button>
+                  </div>
+                )}
+
+                {selectedIncident.status === "Resolved" && (
+                  <span className="text-xs px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 font-medium flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Resolution Grace Period Active (24h)</span>
+                  </span>
+                )}
+
+                {selectedIncident.status === "Closed" && (
+                  <span className="text-xs px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 font-medium flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Incident Closed</span>
                   </span>
                 )}
               </div>

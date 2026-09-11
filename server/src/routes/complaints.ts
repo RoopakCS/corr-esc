@@ -47,6 +47,8 @@ function formatComplaint(complaint: IComplaint, incident?: IIncident | any, cate
           escalationTier: incidentDoc.escalationTier,
           corroborationCount: incidentDoc.corroborationCount,
           slaDeadline: incidentDoc.slaDeadline,
+          gracePeriodExpiresAt: incidentDoc.gracePeriodExpiresAt,
+          reopenCount: incidentDoc.reopenCount,
           createdAt: incidentDoc.createdAt,
           contractionAudit: (incidentDoc.contractionAudit || []).map((audit: any) => ({
             id: audit._id ? audit._id.toString() : undefined,

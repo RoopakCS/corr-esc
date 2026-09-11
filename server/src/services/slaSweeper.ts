@@ -14,6 +14,8 @@ export interface BreachSweepResult {
   sweptAt: Date;
   breachedCount: number;
   escalatedIncidents: string[];
+  closedCount: number;
+  closedIncidents: string[];
   notificationsCreated: number;
 }
 
@@ -33,7 +35,7 @@ async function findUserByTarget(
   });
 }
 
-async function resolveSupervisor(
+export async function resolveSupervisor(
   organizationId: Types.ObjectId | string,
   tierTarget: ISupervisorTier | undefined
 ): Promise<IUser | null> {
@@ -177,10 +179,36 @@ export async function runSlaBreachSweep(
     }
   }
 
+  // Sweep resolved incidents whose grace period has expired without contest
+  const expiredResolved = await Incident.find({
+    status: "Resolved",
+    gracePeriodExpiresAt: { $lte: referenceTime },
+  });
+
+  const closedIncidents: string[] = [];
+  for (const inc of expiredResolved) {
+    const closed = await Incident.findOneAndUpdate(
+      {
+        _id: inc._id,
+        status: "Resolved",
+        gracePeriodExpiresAt: { $lte: referenceTime },
+      },
+      {
+        $set: { status: "Closed" },
+      },
+      { new: true }
+    );
+    if (closed) {
+      closedIncidents.push(closed._id.toString());
+    }
+  }
+
   return {
     sweptAt: referenceTime,
     breachedCount: escalatedIds.length,
     escalatedIncidents: escalatedIds,
+    closedCount: closedIncidents.length,
+    closedIncidents,
     notificationsCreated: totalNotificationsCreated,
   };
 }

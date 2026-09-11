@@ -3,11 +3,13 @@ import { z } from "zod";
 import mongoose from "mongoose";
 import { Incident, IIncident, IncidentStatus } from "../models/Incident.js";
 import { Complaint, IComplaint } from "../models/Complaint.js";
-import { Category } from "../models/Category.js";
+import { Category, ISupervisorTier } from "../models/Category.js";
 import { User } from "../models/User.js";
+import { Notification } from "../models/Notification.js";
 import { verifyAuth, requireOrgAccess } from "../middleware/auth.js";
 import { computeComplaintSimilarity } from "../services/similarity.js";
 import { calculateContractedDeadline } from "../services/sla.js";
+import { resolveSupervisor } from "../services/slaSweeper.js";
 
 export const incidentsRouter = Router({ mergeParams: true });
 
@@ -309,7 +311,7 @@ incidentsRouter.patch(
 );
 
 const updateStatusSchema = z.object({
-  status: z.literal("In Progress"),
+  status: z.enum(["In Progress", "Resolved", "Closed"]),
 });
 
 // PATCH /api/v1/orgs/:slug/incidents/:id/status
@@ -371,9 +373,220 @@ incidentsRouter.patch(
         });
         return;
       }
+    } else if (targetStatus === "Resolved") {
+      if (incident.status !== "In Progress" && incident.status !== "Resolved") {
+        res.status(400).json({
+          message: `Cannot transition to Resolved from status ${incident.status}`,
+        });
+        return;
+      }
+      // Halt active SLA timer and start 24-hour resolution grace period
+      incident.gracePeriodExpiresAt = new Date(Date.now() + 24 * 3600 * 1000);
+
+      // Find all complaints attached to this incident and notify attached complainants
+      const attachedComplaints = await Complaint.find({ incidentId: incident._id });
+      const uniqueComplainantIds = Array.from(
+        new Set(attachedComplaints.map((c) => c.complainantId.toString()))
+      );
+
+      for (const complainantId of uniqueComplainantIds) {
+        await Notification.create({
+          organizationId: req.organization._id,
+          recipientId: new mongoose.Types.ObjectId(complainantId),
+          incidentId: incident._id,
+          type: "resolution_verification",
+          title: "Resolution Verification Requested",
+          message: `Staff reported this incident resolved. Please verify if it is fixed for you within the 24-hour grace period.`,
+          priority: "normal",
+          isRead: false,
+        });
+      }
+    } else if (targetStatus === "Closed") {
+      incident.gracePeriodExpiresAt = undefined;
     }
 
     incident.status = targetStatus as IncidentStatus;
+    await incident.save();
+
+    await incident.populate("categoryId");
+    await incident.populate("assigneeId");
+    await incident.populate("supervisorId");
+
+    res.status(200).json({
+      incident: formatIncident(incident),
+    });
+  }
+);
+
+const contestSchema = z.object({
+  feedback: z.string().optional(),
+  reason: z.string().optional(),
+});
+
+// POST /api/v1/orgs/:slug/incidents/:id/contest
+incidentsRouter.post(
+  "/:id/contest",
+  verifyAuth,
+  requireOrgAccess,
+  async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: "Invalid incident ID" });
+      return;
+    }
+
+    const incident = await Incident.findOne({
+      _id: id,
+      organizationId: req.organization._id,
+    });
+
+    if (!incident) {
+      res.status(404).json({ message: "Incident not found" });
+      return;
+    }
+
+    // Complainant must be attached to this incident, or Admin
+    if (req.user?.role !== "Admin") {
+      const isAttached = await Complaint.exists({
+        incidentId: incident._id,
+        complainantId: new mongoose.Types.ObjectId(req.user!.userId),
+      });
+
+      if (!isAttached) {
+        res.status(403).json({
+          message: "Only complainants attached to this incident or admins can contest resolution",
+        });
+        return;
+      }
+    }
+
+    if (incident.status !== "Resolved") {
+      res.status(400).json({
+        message: `Only resolved incidents can be contested. Current status: ${incident.status}`,
+      });
+      return;
+    }
+
+    if (incident.gracePeriodExpiresAt && incident.gracePeriodExpiresAt < new Date()) {
+      res.status(400).json({
+        message: "Resolution grace period has expired",
+      });
+      return;
+    }
+
+    // Reopen incident with +1 escalation penalty
+    const newTier = incident.escalationTier + 1;
+    incident.status = "In Progress";
+    incident.reopenCount = (incident.reopenCount || 0) + 1;
+    incident.escalationTier = newTier;
+
+    // Resume SLA timer: extend deadline by paused duration
+    if (incident.gracePeriodExpiresAt) {
+      const graceStartedAt = incident.gracePeriodExpiresAt.getTime() - 24 * 3600 * 1000;
+      const pausedDuration = Math.max(0, Date.now() - graceStartedAt);
+      incident.slaDeadline = new Date(incident.slaDeadline.getTime() + pausedDuration);
+    }
+    incident.gracePeriodExpiresAt = undefined;
+
+    // Look up designated supervisor for the newly escalated tier
+    const category = await Category.findById(incident.categoryId);
+    let tierTarget: ISupervisorTier | undefined;
+    if (category && category.tierTargets && category.tierTargets.length > 0) {
+      tierTarget =
+        category.tierTargets.find((t) => t.tier === newTier) ||
+        category.tierTargets[category.tierTargets.length - 1];
+    }
+
+    const supervisor = await resolveSupervisor(incident.organizationId, tierTarget);
+    if (supervisor) {
+      incident.supervisorId = supervisor._id;
+    }
+
+    await incident.save();
+
+    await incident.populate("categoryId");
+    await incident.populate("assigneeId");
+    await incident.populate("supervisorId");
+
+    // Dispatch urgent alert to designated supervisor and admin
+    const recipientsToAlert = new Set<string>();
+    if (supervisor) {
+      recipientsToAlert.add(supervisor._id.toString());
+    }
+    const adminUser = await User.findOne({
+      organizationId: req.organization._id,
+      role: "Admin",
+    });
+    if (adminUser) {
+      recipientsToAlert.add(adminUser._id.toString());
+    }
+
+    for (const recipientId of recipientsToAlert) {
+      await Notification.create({
+        organizationId: req.organization._id,
+        recipientId: new mongoose.Types.ObjectId(recipientId),
+        incidentId: incident._id,
+        type: "incident_reopened",
+        title: "Escalated: Incident Contested & Reopened",
+        message: `Incident in category "${
+          (incident.categoryId as any)?.name || "Incident"
+        }" was contested by a complainant. Status returned to In Progress with an immediate +1 escalation tier penalty (now Tier ${newTier}).`,
+        priority: "high",
+        isRead: false,
+      });
+    }
+
+    res.status(200).json({
+      incident: formatIncident(incident),
+    });
+  }
+);
+
+// POST /api/v1/orgs/:slug/incidents/:id/confirm-resolution
+incidentsRouter.post(
+  "/:id/confirm-resolution",
+  verifyAuth,
+  requireOrgAccess,
+  async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: "Invalid incident ID" });
+      return;
+    }
+
+    const incident = await Incident.findOne({
+      _id: id,
+      organizationId: req.organization._id,
+    });
+
+    if (!incident) {
+      res.status(404).json({ message: "Incident not found" });
+      return;
+    }
+
+    if (req.user?.role !== "Admin") {
+      const isAttached = await Complaint.exists({
+        incidentId: incident._id,
+        complainantId: new mongoose.Types.ObjectId(req.user!.userId),
+      });
+
+      if (!isAttached) {
+        res.status(403).json({
+          message: "Only attached complainants or admin can confirm resolution",
+        });
+        return;
+      }
+    }
+
+    if (incident.status !== "Resolved") {
+      res.status(400).json({
+        message: `Only resolved incidents can be confirmed. Current status: ${incident.status}`,
+      });
+      return;
+    }
+
+    incident.status = "Closed";
+    incident.gracePeriodExpiresAt = undefined;
     await incident.save();
 
     await incident.populate("categoryId");

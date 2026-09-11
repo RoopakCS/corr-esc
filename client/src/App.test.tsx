@@ -737,6 +737,108 @@ describe("Frontend Client App", () => {
       expect(screen.getByText("John Supervisor")).toBeInTheDocument();
     });
   });
+
+  it("allows complainant to view resolution verification prompt and contest resolution to reopen incident with penalty", async () => {
+    localStorage.clear();
+    localStorage.setItem("corr_esc_token", "mock-complainant-jwt");
+    localStorage.setItem("user_role", "Complainant");
+    localStorage.setItem("user_id", "comp-user-1");
+    window.history.pushState({}, "Complainant Portal", "/org/campus/portal");
+
+    let mockIncident: {
+      id: string;
+      status: "New" | "Assigned" | "In Progress" | "Resolved" | "Closed";
+      escalationTier: number;
+      corroborationCount: number;
+      slaDeadline: string;
+      gracePeriodExpiresAt: string;
+      reopenCount: number;
+      createdAt: string;
+      contractionAudit: never[];
+    } = {
+      id: "inc-resolved-1",
+      status: "Resolved",
+      escalationTier: 0,
+      corroborationCount: 2,
+      slaDeadline: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
+      gracePeriodExpiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+      reopenCount: 0,
+      createdAt: new Date().toISOString(),
+      contractionAudit: [],
+    };
+
+    const mockComplaint = {
+      id: "comp-1",
+      title: "Elevator Door Jammed",
+      description: "Elevator doors repeatedly jamming on floor 2",
+      locationContext: "Central Library",
+      photoUrl: "",
+      complainantId: "comp-user-1",
+      categoryId: "cat-lift",
+      categoryName: "Elevators",
+      incidentId: "inc-resolved-1",
+      incident: mockIncident,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    vi.spyOn(global, "fetch").mockImplementation((url: string | URL | Request, init?: any) => {
+      const urlStr = url.toString();
+      const method = init?.method || "GET";
+
+      if (urlStr.includes("/api/v1/orgs/campus/complaints/my") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({ complaints: [{ ...mockComplaint, incident: mockIncident }] }),
+        } as Response);
+      }
+
+      if (urlStr.includes("/api/v1/orgs/campus/categories") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ categories: [{ id: "cat-lift", name: "Elevators" }] }),
+        } as Response);
+      }
+
+      if (
+        urlStr.includes("/api/v1/orgs/campus/incidents/inc-resolved-1/contest") &&
+        method === "POST"
+      ) {
+        mockIncident = {
+          ...mockIncident,
+          status: "In Progress",
+          escalationTier: 1,
+          reopenCount: 1,
+        };
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ incident: mockIncident }),
+        } as Response);
+      }
+
+      return Promise.reject(new Error(`Unhandled URL: ${urlStr} ${method}`));
+    });
+
+    render(<App />);
+
+    // 1. Verify prompt renders in Complainant Portal
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Staff reported this issue resolved\. Is it fixed for you\?/i)
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Yes, Verified/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Still Not Fixed/i })).toBeInTheDocument();
+    });
+
+    // 2. Click "Still Not Fixed"
+    fireEvent.click(screen.getByRole("button", { name: /Still Not Fixed/i }));
+
+    // 3. Verify contested reopen request sent and UI updates
+    await waitFor(() => {
+      expect(screen.getByText(/Incident marked as 'Still Not Fixed'/i)).toBeInTheDocument();
+    });
+  });
 });
 
 

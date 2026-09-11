@@ -243,6 +243,8 @@ export interface IncidentInfo {
   escalationTier: number;
   corroborationCount: number;
   slaDeadline: string;
+  gracePeriodExpiresAt?: string;
+  reopenCount?: number;
   createdAt?: string;
   contractionAudit?: ContractionAuditEntry[];
 }
@@ -451,6 +453,8 @@ export interface IncidentItem {
   };
   corroborationCount: number;
   slaDeadline: string;
+  gracePeriodExpiresAt?: string;
+  reopenCount?: number;
   contractionAudit?: ContractionAuditEntry[];
   createdAt: string;
   updatedAt: string;
@@ -544,7 +548,7 @@ export async function claimIncident(
 export async function updateIncidentStatus(
   slug: string,
   id: string,
-  status: "In Progress"
+  status: "In Progress" | "Resolved" | "Closed"
 ): Promise<IncidentItem> {
   const token = getToken();
   if (!token) {
@@ -566,6 +570,64 @@ export async function updateIncidentStatus(
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.message || "Failed to update incident status");
+  }
+
+  return data.incident;
+}
+
+export async function contestIncident(
+  slug: string,
+  incidentId: string,
+  feedback?: string
+): Promise<IncidentItem> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(
+    `${API_BASE}/${encodeURIComponent(slug)}/incidents/${encodeURIComponent(incidentId)}/contest`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ feedback }),
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to contest incident resolution");
+  }
+
+  return data.incident;
+}
+
+export async function confirmIncidentResolution(
+  slug: string,
+  incidentId: string
+): Promise<IncidentItem> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const res = await fetch(
+    `${API_BASE}/${encodeURIComponent(slug)}/incidents/${encodeURIComponent(incidentId)}/confirm-resolution`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to confirm incident resolution");
   }
 
   return data.incident;
