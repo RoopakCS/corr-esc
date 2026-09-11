@@ -89,7 +89,7 @@ export function RegisterComplainant() {
                   setFormData({ ...formData, name: e.target.value })
                 }
                 placeholder="e.g. John Doe"
-                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-tactile"
+                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-200"
               />
             </div>
 
@@ -109,7 +109,7 @@ export function RegisterComplainant() {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 placeholder="you@domain.com"
-                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-tactile"
+                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-200"
               />
             </div>
 
@@ -130,7 +130,7 @@ export function RegisterComplainant() {
                   setFormData({ ...formData, password: e.target.value })
                 }
                 placeholder="••••••••"
-                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-tactile"
+                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-200"
               />
             </div>
 
@@ -151,14 +151,14 @@ export function RegisterComplainant() {
                   setFormData({ ...formData, confirmPassword: e.target.value })
                 }
                 placeholder="••••••••"
-                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-tactile"
+                className="block w-full px-4 py-2.5 bg-obsidian border border-obsidian-border rounded-xl text-slate-100 placeholder-slate-500 focus-ring transition-all duration-200"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 focus-ring pressable shadow-lg shadow-emerald-600/20 disabled:opacity-50 transition-all duration-tactile"
+              className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 focus-ring pressable shadow-lg shadow-emerald-600/20 disabled:opacity-50 transition-all duration-200"
             >
               {loading ? "Creating Account..." : "Create Complainant Account"}
             </button>

@@ -85,13 +85,13 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({
             <div key={entry.id || `${entry.complaintId}-${index}`} className="relative group">
               {/* Step indicator node */}
               <div
-                className={`absolute -left-6 top-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-tactile ${nodeStyle}`}
+                className={`absolute -left-6 top-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${nodeStyle}`}
               >
                 {NodeIcon}
               </div>
 
               {/* Event card */}
-              <div className="bg-obsidian-surface border border-obsidian-border hover:border-obsidian-subtle rounded-xl p-3.5 space-y-2 transition-all duration-tactile shadow-surface">
+              <div className="bg-obsidian-surface border border-obsidian-border hover:border-obsidian-subtle rounded-xl p-3.5 space-y-2 transition-all duration-200 shadow-surface">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <span className="text-xs font-bold text-slate-100">

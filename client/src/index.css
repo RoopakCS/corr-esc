@@ -43,6 +43,6 @@
   }
 
   .pressable {
-    @apply transition-all duration-tactile active:scale-[0.98];
+    @apply transition-all duration-200 active:scale-[0.98];
   }
 }
