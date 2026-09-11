@@ -5,7 +5,9 @@
 @layer base {
   body {
     margin: 0;
-    @apply bg-obsidian text-slate-100 font-sans antialiased;
+    background-color: #0A0C10;
+    color: #F1F5F9;
+    @apply font-sans antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -22,7 +24,8 @@
   select:focus-visible,
   textarea:focus-visible,
   a:focus-visible {
-    @apply outline-none ring-2 ring-sky-500/70 ring-offset-2 ring-offset-obsidian;
+    @apply outline-none ring-2 ring-sky-500/70 ring-offset-2;
+    --tw-ring-offset-color: #0A0C10;
   }
 }
 
@@ -35,7 +38,8 @@
   }
 
   .focus-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/70 focus-visible:ring-offset-2;
+    --tw-ring-offset-color: #0A0C10;
   }
 
   .pressable {
