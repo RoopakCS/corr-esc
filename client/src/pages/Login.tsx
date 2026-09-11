@@ -61,7 +61,7 @@ export function Login() {
               </div>
               <div className="p-1.5 rounded-lg bg-obsidian border border-obsidian-border/60">
                 <Briefcase className="w-3 h-3 mx-auto mb-1 text-slate-400" />
-                <span>Staff Pool</span>
+                <span>Staff</span>
               </div>
               <div className="p-1.5 rounded-lg bg-obsidian border border-obsidian-border/60">
                 <Shield className="w-3 h-3 mx-auto mb-1 text-slate-400" />
@@ -79,10 +79,14 @@ export function Login() {
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label
+                htmlFor="login-email"
+                className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5"
+              >
                 Email Address
               </label>
               <input
+                id="login-email"
                 type="email"
                 required
                 value={email}
@@ -93,10 +97,14 @@ export function Login() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label
+                htmlFor="login-password"
+                className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5"
+              >
                 Password
               </label>
               <input
+                id="login-password"
                 type="password"
                 required
                 value={password}

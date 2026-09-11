@@ -60,7 +60,7 @@ export function RegisterComplainant() {
         <div className="p-3.5 rounded-xl bg-obsidian-surface border border-obsidian-border text-xs text-slate-300 flex items-start gap-3 shadow-surface">
           <ShieldCheck className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
           <p className="leading-relaxed text-[11px] text-slate-400">
-            <span className="font-semibold text-slate-200">Blind Complaint Ingestion:</span> All submitted reports are processed independently without public exposure, ensuring unbiased SLA clustering and dynamic acceleration.
+            <span className="font-semibold text-slate-200">Blind Complaint Ingestion:</span> All submitted complaints are processed independently without public exposure, ensuring unbiased SLA clustering and dynamic acceleration.
           </p>
         </div>
 
@@ -74,10 +74,14 @@ export function RegisterComplainant() {
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label
+                htmlFor="complainant-name"
+                className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5"
+              >
                 Full Name
               </label>
               <input
+                id="complainant-name"
                 type="text"
                 required
                 value={formData.name}
@@ -90,10 +94,14 @@ export function RegisterComplainant() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label
+                htmlFor="complainant-email"
+                className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5"
+              >
                 Email Address
               </label>
               <input
+                id="complainant-email"
                 type="email"
                 required
                 value={formData.email}
@@ -106,10 +114,14 @@ export function RegisterComplainant() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label
+                htmlFor="complainant-password"
+                className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5"
+              >
                 Password
               </label>
               <input
+                id="complainant-password"
                 type="password"
                 required
                 minLength={6}
@@ -123,10 +135,14 @@ export function RegisterComplainant() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label
+                htmlFor="complainant-confirm-password"
+                className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5"
+              >
                 Confirm Password
               </label>
               <input
+                id="complainant-confirm-password"
                 type="password"
                 required
                 minLength={6}
