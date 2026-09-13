@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Clock, AlertTriangle, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 export interface CountdownTimerProps {
   deadline: string | Date;
@@ -121,7 +123,8 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
 
   if (compact) {
     return (
-      <div
+      <Badge
+        variant="outline"
         role="timer"
         aria-live="polite"
         aria-label={`SLA countdown: ${formattedTime}, status: ${theme.label}`}
@@ -132,7 +135,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
       >
         <span className={`w-1.5 h-1.5 rounded-full ${theme.dot}`} />
         <span>{formattedTime}</span>
-      </div>
+      </Badge>
     );
   }
 
@@ -150,12 +153,13 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
           <Clock className="w-3.5 h-3.5 text-slate-400" />
           {showLabel && <span className="font-medium text-slate-300">SLA Countdown:</span>}
         </span>
-        <span
+        <Badge
+          variant="outline"
           className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wide border ${theme.badgeBg} ${theme.badgeText}`}
         >
           <span className={`w-1.5 h-1.5 rounded-full ${theme.dot}`} />
           <span>{theme.label}</span>
-        </span>
+        </Badge>
       </div>
 
       <div className="flex items-baseline justify-between">
@@ -169,12 +173,10 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
 
       {/* Progress Track */}
       {totalDurationMs !== undefined && (
-        <div className="h-1.5 w-full bg-obsidian-muted rounded-full overflow-hidden border border-obsidian-border/60">
-          <div
-            className={`h-full transition-all duration-500 ${theme.barFill}`}
-            style={{ width: `${Math.round(ratio * 100)}%` }}
-          />
-        </div>
+        <Progress
+          value={Math.round(ratio * 100)}
+          className={`h-1.5 w-full bg-obsidian-muted border border-obsidian-border/60 [&>[data-slot=progress-indicator]]:${theme.barFill}`}
+        />
       )}
     </div>
   );

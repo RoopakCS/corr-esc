@@ -1,6 +1,9 @@
 import React from "react";
 import { History, ArrowDownRight, Clock, CheckCircle2, AlertTriangle, AlertCircle } from "lucide-react";
 import { ContractionAuditEntry } from "../services/api.js";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 export interface AuditTimelineProps {
   entries?: ContractionAuditEntry[];
@@ -39,13 +42,15 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({
 }) => {
   if (!entries || entries.length === 0) {
     return (
-      <div className={`bg-obsidian-surface border border-obsidian-border rounded-xl p-6 text-center space-y-2 ${className}`}>
-        <History className="w-8 h-8 text-slate-500 mx-auto" />
-        <p className="text-xs font-semibold text-slate-200">Baseline SLA Active</p>
-        <p className="text-[11px] text-slate-400 max-w-xs mx-auto leading-relaxed">
-          No corroboration contractions recorded yet. Merging additional complaints will dynamically accelerate the SLA deadline and log audit events here.
-        </p>
-      </div>
+      <Card className={`bg-obsidian-surface border border-obsidian-border p-6 text-center space-y-2 ${className}`}>
+        <CardContent className="p-0 space-y-2">
+          <History className="w-8 h-8 text-slate-500 mx-auto" />
+          <p className="text-xs font-semibold text-slate-200">Baseline SLA Active</p>
+          <p className="text-[11px] text-slate-400 max-w-xs mx-auto leading-relaxed">
+            No corroboration contractions recorded yet. Merging additional complaints will dynamically accelerate the SLA deadline and log audit events here.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -91,55 +96,58 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({
               </div>
 
               {/* Event card */}
-              <div className="bg-obsidian-surface border border-obsidian-border hover:border-obsidian-subtle rounded-xl p-3.5 space-y-2 transition-all duration-200 shadow-surface">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <span className="text-xs font-bold text-slate-100">
-                      {isInitial ? (
-                        "Baseline SLA Established"
-                      ) : isPenalty ? (
-                        `Reopen Escalation Penalty Applied`
-                      ) : isBreach ? (
-                        `SLA Tier Escalation Breach`
-                      ) : (
-                        `Corroboration #${entry.corroborationCount} Attached`
-                      )}
-                    </span>
-                    <p className="text-xs text-indigo-300 font-medium mt-0.5">
-                      &ldquo;{entry.complaintTitle}&rdquo;
-                    </p>
-                  </div>
+              <Card className="bg-obsidian-surface border border-obsidian-border hover:border-obsidian-subtle rounded-xl p-3.5 space-y-2 transition-all duration-200 shadow-surface">
+                <CardContent className="p-0 space-y-2">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <span className="text-xs font-bold text-slate-100">
+                        {isInitial ? (
+                          "Baseline SLA Established"
+                        ) : isPenalty ? (
+                          `Reopen Escalation Penalty Applied`
+                        ) : isBreach ? (
+                          `SLA Tier Escalation Breach`
+                        ) : (
+                          `Corroboration #${entry.corroborationCount} Attached`
+                        )}
+                      </span>
+                      <p className="text-xs text-indigo-300 font-medium mt-0.5">
+                        &ldquo;{entry.complaintTitle}&rdquo;
+                      </p>
+                    </div>
 
-                  <div className="text-right">
-                    {isInitial ? (
-                      <span className="px-2 py-0.5 bg-obsidian-muted border border-obsidian-border text-slate-300 rounded-md text-[10px] font-semibold">
-                        Initial Complaint
-                      </span>
-                    ) : isPenalty ? (
-                      <span className="px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-md text-[10px] font-bold font-mono tabular-nums">
-                        +1 Tier Penalty
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-md text-[10px] font-bold font-mono tabular-nums">
-                        -{formatDuration(entry.contractedMs)} Contracted
-                      </span>
-                    )}
-                    <div className="text-[10px] text-slate-400 font-mono tabular-nums mt-1">
-                      <span>{formatRelativeTime(entry.createdAt)}</span>
-                      <span className="mx-1 text-slate-600">&bull;</span>
-                      <span>
-                        {new Date(entry.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          second: "2-digit",
-                        })}
-                      </span>
+                    <div className="text-right">
+                      {isInitial ? (
+                        <Badge variant="outline" className="px-2 py-0.5 bg-obsidian-muted border-obsidian-border text-slate-300 rounded-md text-[10px] font-semibold">
+                          Initial Complaint
+                        </Badge>
+                      ) : isPenalty ? (
+                        <Badge variant="outline" className="px-2 py-0.5 bg-amber-500/10 border-amber-500/30 text-amber-400 rounded-md text-[10px] font-bold font-mono tabular-nums">
+                          +1 Tier Penalty
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="px-2 py-0.5 bg-emerald-500/10 border-emerald-500/30 text-emerald-400 rounded-md text-[10px] font-bold font-mono tabular-nums">
+                          -{formatDuration(entry.contractedMs)} Contracted
+                        </Badge>
+                      )}
+                      <div className="text-[10px] text-slate-400 font-mono tabular-nums mt-1">
+                        <span>{formatRelativeTime(entry.createdAt)}</span>
+                        <span className="mx-1 text-slate-600">&bull;</span>
+                        <span>
+                          {new Date(entry.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                          })}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Deadline comparison */}
-                <div className="pt-2 border-t border-obsidian-border/60 flex flex-wrap items-center justify-between text-[11px] text-slate-400 font-mono tabular-nums">
+                  <Separator className="bg-obsidian-border/60" />
+
+                  {/* Deadline comparison */}
+                  <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-400 font-mono tabular-nums">
                   {!isInitial && (
                     <div className="flex items-center gap-1 text-slate-400 line-through">
                       <Clock className="w-3 h-3 text-slate-400" />
@@ -155,7 +163,8 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({
                     </span>
                   </div>
                 </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           );
         })}

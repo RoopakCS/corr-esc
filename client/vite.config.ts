@@ -5,6 +5,11 @@ import tailwindcss from "tailwindcss";
 import autoprefixer from "autoprefixer";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
   plugins: [react()],
   css: {
     postcss: {
