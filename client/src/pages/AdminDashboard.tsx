@@ -287,10 +287,10 @@ export function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-obsidian flex items-center justify-center text-slate-100">
-        <div className="flex items-center space-x-3 bg-obsidian-surface border border-obsidian-border px-6 py-4 rounded-2xl shadow-surface">
-          <Clock className="w-5 h-5 animate-spin text-indigo-400" />
-          <span className="text-sm text-slate-300 font-medium">Loading organization governance console...</span>
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="flex items-center space-x-3 bg-card border border-border px-6 py-4 rounded-xl shadow-xs">
+          <Clock className="w-5 h-5 animate-spin text-primary" />
+          <span className="text-sm text-muted-foreground font-medium">Loading organization governance console...</span>
         </div>
       </div>
     );
@@ -298,19 +298,19 @@ export function AdminDashboard() {
 
   if (error || !dashboard) {
     return (
-      <div className="min-h-screen bg-obsidian flex flex-col items-center justify-center text-slate-100 px-4">
-        <Card className="bg-obsidian-surface border-red-500/30 p-8 rounded-2xl max-w-md w-full text-center shadow-surface">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center px-4">
+        <Card className="border-destructive/30 p-8 rounded-xl max-w-md w-full text-center shadow-xs">
           <CardContent className="p-0">
-            <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="w-6 h-6" />
             </div>
-            <CardTitle className="text-xl font-bold text-white mb-2">Access Denied</CardTitle>
-            <CardDescription className="text-sm text-slate-400 mb-6 leading-relaxed">
+            <CardTitle className="text-xl font-bold mb-2">Access Denied</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground mb-6 leading-relaxed">
               {error || "Failed to load governance dashboard"}
             </CardDescription>
             <Button
               onClick={handleAccessDeniedRedirect}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold text-white"
+              className="w-full rounded-xl text-sm font-semibold"
             >
               Go to Login
             </Button>
@@ -321,23 +321,23 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-obsidian text-slate-100 flex flex-col antialiased">
+    <div className="min-h-screen bg-background text-foreground flex flex-col antialiased">
       {/* Executive Header */}
-      <header className="border-b border-obsidian-border bg-obsidian-surface/90 backdrop-blur sticky top-0 z-20 px-6 py-3.5 flex items-center justify-between">
+      <header className="border-b border-border bg-card/80 backdrop-blur sticky top-0 z-20 px-6 py-3.5 flex items-center justify-between">
         <div className="flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white shadow-glowViolet/30">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-xs">
             <Building className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-bold text-base text-white leading-tight tracking-tight">
+              <h1 className="font-bold text-base text-foreground leading-tight tracking-tight">
                 {dashboard.organization.name}
               </h1>
-              <Badge variant="outline" className="text-[11px] font-mono font-medium px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border-indigo-500/20">
+              <Badge variant="secondary" className="text-[11px] font-mono font-medium px-2 py-0.5 rounded-full">
                 Governance Console
               </Badge>
             </div>
-            <p className="text-xs font-mono text-slate-400">/org/{dashboard.organization.slug}</p>
+            <p className="text-xs font-mono text-muted-foreground">/org/{dashboard.organization.slug}</p>
           </div>
         </div>
 
@@ -360,15 +360,15 @@ export function AdminDashboard() {
               }
             }}
           />
-          <div className="hidden sm:flex items-center space-x-2 bg-obsidian-elevated/80 px-3 py-1.5 rounded-xl border border-obsidian-border">
-            <Shield className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-xs font-semibold text-slate-200">{dashboard.admin.role}</span>
+          <div className="hidden sm:flex items-center space-x-2 bg-muted px-3 py-1.5 rounded-xl border border-border">
+            <Shield className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-semibold text-foreground">{dashboard.admin.role}</span>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleLogout}
-            className="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-red-400 px-3 py-1.5 rounded-xl hover:bg-obsidian-hover h-auto"
+            className="flex items-center space-x-1.5 text-xs text-muted-foreground hover:text-destructive px-3 py-1.5 rounded-xl h-auto"
             title="Sign out of Admin Dashboard"
           >
             <LogOut className="w-3.5 h-3.5" />
@@ -380,18 +380,18 @@ export function AdminDashboard() {
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
         {/* Institutional Welcome Banner */}
-        <Card className="relative overflow-hidden bg-gradient-to-r from-indigo-950/40 via-obsidian-surface to-obsidian-card border-obsidian-border rounded-2xl shadow-surface">
+        <Card className="rounded-xl shadow-xs">
           <CardContent className="p-6 relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <Badge className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-                  <CheckCircle className="w-3.5 h-3.5 mr-1" /> Organization Active
+                <Badge variant="secondary" className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                  <CheckCircle className="w-3.5 h-3.5 mr-1 text-primary" /> Organization Active
                 </Badge>
               </div>
-              <CardTitle className="text-2xl font-bold tracking-tight text-white">
+              <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
                 Welcome back, {dashboard.admin.name}
               </CardTitle>
-              <CardDescription className="text-xs text-slate-400 max-w-2xl leading-relaxed">
+              <CardDescription className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
                 Campus-wide governance overview. Manage problem category pool rules, dynamic SLA contraction decay parameters (α), and supervisory escalation pathways.
               </CardDescription>
             </div>
@@ -400,70 +400,70 @@ export function AdminDashboard() {
 
         {/* Executive KPI Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-obsidian-surface/90 border-obsidian-border rounded-2xl p-5 shadow-surface hover:border-obsidian-subtle transition">
+          <Card className="rounded-xl p-5 shadow-xs">
             <CardHeader className="p-0 pb-2 space-y-0">
-              <div className="text-slate-400 text-xs font-medium flex items-center justify-between mb-2">
+              <div className="text-muted-foreground text-xs font-medium flex items-center justify-between mb-2">
                 <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                  <Building className="w-3.5 h-3.5 text-indigo-400" /> Organization Profile
+                  <Building className="w-3.5 h-3.5 text-primary" /> Organization Profile
                 </span>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               </div>
-              <CardTitle className="text-base font-bold text-white truncate" title={dashboard.organization.name}>
+              <CardTitle className="text-base font-bold text-foreground truncate" title={dashboard.organization.name}>
                 {dashboard.organization.name}
               </CardTitle>
-              <CardDescription className="text-xs text-slate-400 mt-1 font-mono flex items-center gap-1">
+              <CardDescription className="text-xs text-muted-foreground mt-1 font-mono flex items-center gap-1">
                 <span>slug:</span>
-                <code className="bg-obsidian-elevated px-1.5 py-0.5 rounded text-indigo-300">
+                <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">
                   {dashboard.organization.slug}
                 </code>
               </CardDescription>
             </CardHeader>
           </Card>
 
-          <Card className="bg-obsidian-surface/90 border-obsidian-border rounded-2xl p-5 shadow-surface hover:border-obsidian-subtle transition">
+          <Card className="rounded-xl p-5 shadow-xs">
             <CardHeader className="p-0 pb-2 space-y-0">
-              <div className="text-slate-400 text-xs font-medium flex items-center justify-between mb-2">
+              <div className="text-muted-foreground text-xs font-medium flex items-center justify-between mb-2">
                 <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                  <User className="w-3.5 h-3.5 text-indigo-400" /> Admin Profile
+                  <User className="w-3.5 h-3.5 text-primary" /> Admin Profile
                 </span>
-                <Badge variant="outline" className="text-[10px] font-mono text-slate-500 border-obsidian-border">Authorized</Badge>
+                <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground">Authorized</Badge>
               </div>
-              <CardTitle className="text-base font-bold text-white truncate">{dashboard.admin.name}</CardTitle>
-              <CardDescription className="text-xs text-slate-400 mt-1 truncate font-mono">{dashboard.admin.email}</CardDescription>
+              <CardTitle className="text-base font-bold text-foreground truncate">{dashboard.admin.name}</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground mt-1 truncate font-mono">{dashboard.admin.email}</CardDescription>
             </CardHeader>
           </Card>
 
-          <Card className="bg-obsidian-surface/90 border-obsidian-border rounded-2xl p-5 shadow-surface hover:border-obsidian-subtle transition">
+          <Card className="rounded-xl p-5 shadow-xs">
             <CardHeader className="p-0 pb-2 space-y-0">
-              <div className="text-slate-400 text-xs font-medium flex items-center justify-between mb-2">
+              <div className="text-muted-foreground text-xs font-medium flex items-center justify-between mb-2">
                 <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                  <Sliders className="w-3.5 h-3.5 text-indigo-400" /> Configured Categories
+                  <Sliders className="w-3.5 h-3.5 text-primary" /> Configured Categories
                 </span>
-                <Badge className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">Active</Badge>
+                <Badge variant="secondary" className="text-[10px] font-mono">Active</Badge>
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="text-2xl font-bold font-mono tabular-nums text-emerald-400">
+              <div className="text-2xl font-bold font-mono tabular-nums text-foreground">
                 {categories.length}
               </div>
-              <div className="text-xs text-slate-400 mt-1">Driving dynamic SLA contraction</div>
+              <div className="text-xs text-muted-foreground mt-1">Driving dynamic SLA contraction</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-obsidian-surface/90 border-obsidian-border rounded-2xl p-5 shadow-surface hover:border-obsidian-subtle transition">
+          <Card className="rounded-xl p-5 shadow-xs">
             <CardHeader className="p-0 pb-2 space-y-0">
-              <div className="text-slate-400 text-xs font-medium flex items-center justify-between mb-2">
+              <div className="text-muted-foreground text-xs font-medium flex items-center justify-between mb-2">
                 <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                  <Users className="w-3.5 h-3.5 text-indigo-400" /> Active Staff
+                  <Users className="w-3.5 h-3.5 text-primary" /> Active Staff
                 </span>
-                <Badge className="text-[10px] font-mono text-sky-400 bg-sky-500/10 border border-sky-500/20">Pools Ready</Badge>
+                <Badge variant="secondary" className="text-[10px] font-mono">Pools Ready</Badge>
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="text-2xl font-bold font-mono tabular-nums text-sky-400">
+              <div className="text-2xl font-bold font-mono tabular-nums text-foreground">
                 {staffList.length}
               </div>
-              <div className="text-xs text-slate-400 mt-1">Assigned to category pools</div>
+              <div className="text-xs text-muted-foreground mt-1">Assigned to category pools</div>
             </CardContent>
           </Card>
         </div>
@@ -474,11 +474,11 @@ export function AdminDashboard() {
           onValueChange={(val) => setActiveTab(val as "categories" | "staff" | "escalations")}
           className="w-full space-y-6"
         >
-          <TabsList className="bg-transparent border-b border-obsidian-border rounded-none p-0 h-auto space-x-6 justify-start w-full">
+          <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto space-x-6 justify-start w-full">
             <TabsTrigger
               value="categories"
               onClick={() => setActiveTab("categories")}
-              className="pb-3 text-sm font-semibold border-b-2 rounded-none border-transparent data-[state=active]:border-indigo-500 data-[state=active]:text-white text-slate-400 hover:text-slate-200 bg-transparent data-[state=active]:bg-transparent flex items-center gap-2 shadow-none transition"
+              className="pb-3 text-sm font-semibold border-b-2 rounded-none border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground hover:text-foreground bg-transparent data-[state=active]:bg-transparent flex items-center gap-2 shadow-none transition"
             >
               <Sliders className="w-4 h-4" />
               <span>Problem Categories ({categories.length})</span>
@@ -486,7 +486,7 @@ export function AdminDashboard() {
             <TabsTrigger
               value="staff"
               onClick={() => setActiveTab("staff")}
-              className="pb-3 text-sm font-semibold border-b-2 rounded-none border-transparent data-[state=active]:border-indigo-500 data-[state=active]:text-white text-slate-400 hover:text-slate-200 bg-transparent data-[state=active]:bg-transparent flex items-center gap-2 shadow-none transition"
+              className="pb-3 text-sm font-semibold border-b-2 rounded-none border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground hover:text-foreground bg-transparent data-[state=active]:bg-transparent flex items-center gap-2 shadow-none transition"
             >
               <Users className="w-4 h-4" />
               <span>Staff & Category Pools ({staffList.length})</span>
@@ -494,9 +494,9 @@ export function AdminDashboard() {
             <TabsTrigger
               value="escalations"
               onClick={() => setActiveTab("escalations")}
-              className="pb-3 text-sm font-semibold border-b-2 rounded-none border-transparent data-[state=active]:border-red-500 data-[state=active]:text-white text-slate-400 hover:text-slate-200 bg-transparent data-[state=active]:bg-transparent flex items-center gap-2 shadow-none transition"
+              className="pb-3 text-sm font-semibold border-b-2 rounded-none border-transparent data-[state=active]:border-destructive data-[state=active]:text-foreground text-muted-foreground hover:text-foreground bg-transparent data-[state=active]:bg-transparent flex items-center gap-2 shadow-none transition"
             >
-              <Shield className="w-4 h-4 text-red-400" />
+              <Shield className="w-4 h-4 text-destructive" />
               <span>Supervisory Escalations ({escalatedIncidents.length})</span>
             </TabsTrigger>
           </TabsList>
@@ -504,20 +504,20 @@ export function AdminDashboard() {
           {/* Categories Section */}
           {activeTab === "categories" && (
             <TabsContent value="categories" className="mt-0" forceMount>
-              <Card className="bg-obsidian-surface border-obsidian-border rounded-2xl shadow-surface">
+              <Card className="rounded-xl shadow-xs">
                 <CardHeader className="p-6 pb-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                      <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                        <Sliders className="w-4 h-4 text-indigo-400" /> Problem Categories & Dynamic SLA Configuration
+                      <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                        <Sliders className="w-4 h-4 text-primary" /> Problem Categories & Dynamic SLA Configuration
                       </CardTitle>
-                      <CardDescription className="text-xs text-slate-400 mt-1 leading-relaxed">
+                      <CardDescription className="text-xs text-muted-foreground mt-1 leading-relaxed">
                         Define baseline response limits, minimum contraction safety floors, and escalation tier targets for each problem domain.
                       </CardDescription>
                     </div>
                     <Button
                       onClick={openCreateModal}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-semibold text-white shadow-sm transition"
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold"
                     >
                       <Plus className="w-3.5 h-3.5" /> Add Category
                     </Button>
@@ -525,14 +525,14 @@ export function AdminDashboard() {
                 </CardHeader>
                 <CardContent className="p-6 pt-0 space-y-6">
                   {categories.length === 0 ? (
-                    <div className="border border-dashed border-obsidian-border rounded-xl p-10 text-center space-y-3 bg-obsidian-card">
-                      <Layers className="w-10 h-10 text-slate-600 mx-auto" />
-                      <p className="text-sm text-slate-300 font-medium">No problem categories configured yet.</p>
-                      <p className="text-xs text-slate-500">Establish your first domain category with calibrated SLA parameters.</p>
+                    <div className="border border-dashed border-border rounded-xl p-10 text-center space-y-3 bg-muted/40">
+                      <Layers className="w-10 h-10 text-muted-foreground mx-auto" />
+                      <p className="text-sm text-foreground font-medium">No problem categories configured yet.</p>
+                      <p className="text-xs text-muted-foreground">Establish your first domain category with calibrated SLA parameters.</p>
                       <Button
                         variant="link"
                         onClick={openCreateModal}
-                        className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold underline p-0 h-auto"
+                        className="text-xs text-primary underline p-0 h-auto font-semibold"
                       >
                         Create your first category
                       </Button>
@@ -542,18 +542,18 @@ export function AdminDashboard() {
                       {categories.map((cat) => (
                         <Card
                           key={cat.id}
-                          className="bg-obsidian-card border-obsidian-border hover:border-obsidian-subtle rounded-xl p-5 space-y-4 transition flex flex-col justify-between shadow-surface group"
+                          className="rounded-xl p-5 space-y-4 transition flex flex-col justify-between shadow-xs group"
                         >
                           <CardHeader className="p-0 space-y-0">
                             <div className="flex items-start justify-between gap-2">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <CardTitle className="font-bold text-sm text-white tracking-tight">{cat.name}</CardTitle>
-                                  <Badge className="text-[9px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                                  <CardTitle className="font-bold text-sm text-foreground tracking-tight">{cat.name}</CardTitle>
+                                  <Badge variant="secondary" className="text-[9px] font-mono font-medium">
                                     Policy Active
                                   </Badge>
                                 </div>
-                                <CardDescription className="text-[10px] font-mono text-slate-500 mt-0.5">
+                                <CardDescription className="text-[10px] font-mono text-muted-foreground mt-0.5">
                                   ID: {cat.id.slice(-6)}
                                 </CardDescription>
                               </div>
@@ -561,7 +561,7 @@ export function AdminDashboard() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => openEditModal(cat)}
-                                className="h-7 w-7 text-slate-400 hover:text-white rounded-lg hover:bg-obsidian-hover border border-transparent hover:border-obsidian-border transition"
+                                className="h-7 w-7 text-muted-foreground hover:text-foreground rounded-lg transition"
                                 title="Edit Category SLA"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -569,30 +569,30 @@ export function AdminDashboard() {
                             </div>
 
                             {/* Calibrated SLA Metrics Grid */}
-                            <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-obsidian-border text-center">
-                              <div className="bg-obsidian-surface p-2.5 rounded-lg border border-obsidian-border/50">
-                                <span className="block text-[10px] uppercase tracking-wider font-semibold text-slate-400">Base SLA</span>
-                                <span className="text-sm font-bold font-mono tabular-nums text-indigo-400">{cat.baseSlaHours}h</span>
+                            <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-border text-center">
+                              <div className="bg-muted p-2.5 rounded-lg border border-border">
+                                <span className="block text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Base SLA</span>
+                                <span className="text-sm font-bold font-mono tabular-nums text-foreground">{cat.baseSlaHours}h</span>
                               </div>
-                              <div className="bg-obsidian-surface p-2.5 rounded-lg border border-obsidian-border/50">
-                                <span className="block text-[10px] uppercase tracking-wider font-semibold text-slate-400">Floor</span>
-                                <span className="text-sm font-bold font-mono tabular-nums text-amber-400">{cat.floorHours}h</span>
+                              <div className="bg-muted p-2.5 rounded-lg border border-border">
+                                <span className="block text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Floor</span>
+                                <span className="text-sm font-bold font-mono tabular-nums text-foreground">{cat.floorHours}h</span>
                               </div>
-                              <div className="bg-obsidian-surface p-2.5 rounded-lg border border-obsidian-border/50">
-                                <span className="block text-[10px] uppercase tracking-wider font-semibold text-slate-400">Decay (α)</span>
-                                <span className="text-sm font-bold font-mono tabular-nums text-emerald-400">{cat.contractionFactor}</span>
+                              <div className="bg-muted p-2.5 rounded-lg border border-border">
+                                <span className="block text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Decay (α)</span>
+                                <span className="text-sm font-bold font-mono tabular-nums text-foreground">{cat.contractionFactor}</span>
                               </div>
                             </div>
 
                             {/* Formula Guidance Micro-Card */}
-                            <div className="mt-3 p-2 rounded-lg bg-obsidian-surface/60 border border-obsidian-border/30 text-[11px] text-slate-400 flex items-center justify-between">
-                              <span className="text-slate-500">Contraction Rate:</span>
-                              <span className="font-mono text-indigo-300 font-medium">-{Math.round(cat.contractionFactor * 100)}% / corroboration</span>
+                            <div className="mt-3 p-2 rounded-lg bg-muted/50 border border-border text-[11px] text-muted-foreground flex items-center justify-between">
+                              <span>Contraction Rate:</span>
+                              <span className="font-mono text-foreground font-medium">-{Math.round(cat.contractionFactor * 100)}% / corroboration</span>
                             </div>
                           </CardHeader>
 
-                          <CardFooter className="p-0 pt-3 border-t border-obsidian-border flex-col items-start">
-                            <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                          <CardFooter className="p-0 pt-3 border-t border-border flex-col items-start">
+                            <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                               Escalation Authority Hierarchy
                             </span>
                             {cat.tierTargets && cat.tierTargets.length > 0 ? (
@@ -600,12 +600,12 @@ export function AdminDashboard() {
                                 {cat.tierTargets.map((t, idx) => (
                                   <div
                                     key={idx}
-                                    className="flex items-center justify-between text-xs bg-obsidian-surface px-2.5 py-1.5 rounded-lg border border-obsidian-border/40 text-slate-300"
+                                    className="flex items-center justify-between text-xs bg-muted px-2.5 py-1.5 rounded-lg border border-border text-foreground"
                                   >
-                                    <span className="font-semibold text-indigo-400 font-mono text-[11px]">Tier {t.tier}</span>
+                                    <span className="font-semibold text-primary font-mono text-[11px]">Tier {t.tier}</span>
                                     <span className="truncate max-w-[140px]">{t.supervisorRole || t.targetRole}</span>
                                     {t.slaHours ? (
-                                      <span className="text-[10px] font-mono text-amber-300/90 font-medium">
+                                      <span className="text-[10px] font-mono text-muted-foreground font-medium">
                                         {t.slaHours}h target
                                       </span>
                                     ) : null}
@@ -613,7 +613,7 @@ export function AdminDashboard() {
                                 ))}
                               </div>
                             ) : (
-                              <div className="text-xs text-slate-500 italic">No supervisor tiers defined</div>
+                              <div className="text-xs text-muted-foreground italic">No supervisor tiers defined</div>
                             )}
                           </CardFooter>
                         </Card>
@@ -628,14 +628,14 @@ export function AdminDashboard() {
           {/* Staff Section */}
           {activeTab === "staff" && (
             <TabsContent value="staff" className="mt-0" forceMount>
-              <Card className="bg-obsidian-surface border-obsidian-border rounded-2xl shadow-surface">
+              <Card className="rounded-xl shadow-xs">
                 <CardHeader className="p-6 pb-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                      <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                        <Users className="w-4 h-4 text-indigo-400" /> Staff Members & Category Pools
+                      <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                        <Users className="w-4 h-4 text-primary" /> Staff Members & Category Pools
                       </CardTitle>
-                      <CardDescription className="text-xs text-slate-400 mt-1 leading-relaxed">
+                      <CardDescription className="text-xs text-muted-foreground mt-1 leading-relaxed">
                         Provision staff operator accounts and assign them to category pools for automated incident triage routing.
                       </CardDescription>
                     </div>
@@ -650,7 +650,7 @@ export function AdminDashboard() {
                         });
                         setIsStaffModalOpen(true);
                       }}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-semibold text-white shadow-sm transition"
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold"
                     >
                       <UserPlus className="w-3.5 h-3.5" /> Provision Staff
                     </Button>
@@ -659,14 +659,14 @@ export function AdminDashboard() {
 
                 <CardContent className="p-6 pt-0 space-y-6">
                   {staffList.length === 0 ? (
-                    <div className="border border-dashed border-obsidian-border rounded-xl p-10 text-center space-y-3 bg-obsidian-card">
-                      <Users className="w-10 h-10 text-slate-600 mx-auto" />
-                      <p className="text-sm text-slate-300 font-medium">No staff members provisioned yet.</p>
-                      <p className="text-xs text-slate-500">Provision initial personnel to establish response capacity in category pools.</p>
+                    <div className="border border-dashed border-border rounded-xl p-10 text-center space-y-3 bg-muted/40">
+                      <Users className="w-10 h-10 text-muted-foreground mx-auto" />
+                      <p className="text-sm text-foreground font-medium">No staff members provisioned yet.</p>
+                      <p className="text-xs text-muted-foreground">Provision initial personnel to establish response capacity in category pools.</p>
                       <Button
                         variant="link"
                         onClick={() => setIsStaffModalOpen(true)}
-                        className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold underline p-0 h-auto"
+                        className="text-xs text-primary underline p-0 h-auto font-semibold"
                       >
                         Provision your first staff member
                       </Button>
@@ -676,22 +676,22 @@ export function AdminDashboard() {
                       {staffList.map((staff) => (
                         <Card
                           key={staff.id}
-                          className="bg-obsidian-card border-obsidian-border rounded-xl p-5 space-y-4 flex flex-col justify-between shadow-surface"
+                          className="rounded-xl p-5 space-y-4 flex flex-col justify-between shadow-xs"
                         >
                           <CardHeader className="p-0 space-y-0">
                             <div className="flex items-start justify-between">
                               <div>
-                                <CardTitle className="font-bold text-sm text-white">{staff.name}</CardTitle>
-                                <CardDescription className="text-xs font-mono text-slate-400 mt-0.5">{staff.email}</CardDescription>
+                                <CardTitle className="font-bold text-sm text-foreground">{staff.name}</CardTitle>
+                                <CardDescription className="text-xs font-mono text-muted-foreground mt-0.5">{staff.email}</CardDescription>
                               </div>
-                              <Badge className="text-[10px] uppercase font-mono tracking-wider font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                              <Badge variant="secondary" className="text-[10px] uppercase font-mono tracking-wider font-semibold">
                                 {staff.role}
                               </Badge>
                             </div>
                           </CardHeader>
 
-                          <CardContent className="p-0 pt-3 border-t border-obsidian-border">
-                            <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                          <CardContent className="p-0 pt-3 border-t border-border">
+                            <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                               Assigned Category Pools
                             </span>
                             {staff.categoryPools && staff.categoryPools.length > 0 ? (
@@ -699,14 +699,15 @@ export function AdminDashboard() {
                                 {staff.categoryPools.map((pool) => (
                                   <Badge
                                     key={pool.id}
-                                    className="text-xs bg-indigo-950/60 border border-indigo-500/30 text-indigo-300 font-medium"
+                                    variant="outline"
+                                    className="text-xs font-medium"
                                   >
                                     {pool.name}
                                   </Badge>
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-xs text-amber-400/80 italic">No category pools assigned</span>
+                              <span className="text-xs text-muted-foreground italic">No category pools assigned</span>
                             )}
                           </CardContent>
                         </Card>
@@ -721,14 +722,14 @@ export function AdminDashboard() {
           {/* Supervisory Escalations Section */}
           {activeTab === "escalations" && (
             <TabsContent value="escalations" className="mt-0" forceMount>
-              <Card className="bg-obsidian-surface border-obsidian-border rounded-2xl shadow-surface">
+              <Card className="rounded-xl shadow-xs">
                 <CardHeader className="p-6 pb-4">
                   <div>
-                    <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-red-400" />
+                    <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-destructive" />
                       <span>Supervisory Escalations & Oversight</span>
                     </CardTitle>
-                    <CardDescription className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    <CardDescription className="text-xs text-muted-foreground mt-1 leading-relaxed">
                       Active incidents that have breached dynamic SLA deadlines and escalated to supervisory tiers. Primary assignee accountability is maintained while designated supervisory authorities provide supervisory intervention.
                     </CardDescription>
                   </div>
@@ -736,31 +737,31 @@ export function AdminDashboard() {
 
                 <CardContent className="p-6 pt-0 space-y-6">
                   {escalatedIncidents.length === 0 ? (
-                    <div className="border border-dashed border-obsidian-border rounded-xl p-10 text-center space-y-3 bg-obsidian-card">
-                      <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto" />
-                      <p className="text-sm text-slate-200 font-semibold">No Breached or Escalated Incidents</p>
-                      <p className="text-xs text-slate-400">All active incidents in the organization are currently tracking within their dynamic SLA deadlines.</p>
+                    <div className="border border-dashed border-border rounded-xl p-10 text-center space-y-3 bg-muted/40">
+                      <CheckCircle className="w-10 h-10 text-primary mx-auto" />
+                      <p className="text-sm text-foreground font-semibold">No Breached or Escalated Incidents</p>
+                      <p className="text-xs text-muted-foreground">All active incidents in the organization are currently tracking within their dynamic SLA deadlines.</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {escalatedIncidents.map((incident) => (
                         <Card
                           key={incident.id}
-                          className="bg-obsidian-card border-red-500/40 rounded-2xl p-5 shadow-elevated space-y-4"
+                          className="border-destructive/40 rounded-xl p-5 shadow-xs space-y-4"
                         >
                           <CardHeader className="p-0 space-y-0">
                             <div className="flex items-start justify-between gap-2">
-                              <Badge className="text-xs bg-red-950/80 text-red-300 border-red-500/30 font-semibold font-mono">
+                              <Badge variant="destructive" className="text-xs font-semibold font-mono">
                                 Tier {incident.escalationTier} Escalation
                               </Badge>
-                              <Badge variant="outline" className="text-xs bg-obsidian-elevated text-slate-300 border-obsidian-border font-medium">
+                              <Badge variant="outline" className="text-xs font-medium">
                                 {incident.status}
                               </Badge>
                             </div>
 
                             <div className="space-y-1 mt-3">
-                              <CardDescription className="text-xs text-slate-500 font-mono">Incident #{incident.id.slice(-6)}</CardDescription>
-                              <CardTitle className="text-sm font-semibold text-white">
+                              <CardDescription className="text-xs text-muted-foreground font-mono">Incident #{incident.id.slice(-6)}</CardDescription>
+                              <CardTitle className="text-sm font-semibold text-foreground">
                                 {incident.category?.name || "Problem Category"}
                               </CardTitle>
                             </div>
@@ -769,29 +770,29 @@ export function AdminDashboard() {
                           <CardContent className="p-0 space-y-3">
                             <CountdownTimer deadline={incident.slaDeadline} createdAt={incident.createdAt} />
 
-                            <div className="grid grid-cols-2 gap-2 text-xs pt-3 border-t border-obsidian-border">
+                            <div className="grid grid-cols-2 gap-2 text-xs pt-3 border-t border-border">
                               <div>
-                                <div className="text-slate-400 text-[11px]">Primary Assignee</div>
-                                <div className="text-white font-medium truncate">
+                                <div className="text-muted-foreground text-[11px]">Primary Assignee</div>
+                                <div className="text-foreground font-medium truncate">
                                   {incident.assignee?.name || "Unassigned"}
                                 </div>
                               </div>
                               <div>
-                                <div className="text-slate-400 text-[11px]">Designated Supervisor</div>
-                                <div className="text-amber-300 font-medium truncate">
+                                <div className="text-muted-foreground text-[11px]">Designated Supervisor</div>
+                                <div className="text-foreground font-medium truncate">
                                   {incident.supervisor?.name || "Tier Authority"}
                                 </div>
                               </div>
                             </div>
                           </CardContent>
 
-                          <CardFooter className="p-0 pt-2 border-t border-obsidian-border/50 flex justify-between items-center text-xs text-slate-400">
-                            <span>Corroborations: <strong className="text-white font-mono tabular-nums">{incident.corroborationCount}</strong></span>
+                          <CardFooter className="p-0 pt-2 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+                            <span>Corroborations: <strong className="text-foreground font-mono tabular-nums">{incident.corroborationCount}</strong></span>
                             <Button
                               variant="link"
                               size="sm"
                               onClick={() => navigate(`/org/${slug}/staff/dashboard`)}
-                              className="inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 font-medium p-0 h-auto"
+                              className="inline-flex items-center gap-1 text-primary hover:underline font-medium p-0 h-auto"
                             >
                               <span>Inspect in Staff Portal</span>
                               <ArrowRight className="w-3 h-3" />
@@ -810,17 +811,17 @@ export function AdminDashboard() {
 
       {/* Staff Provisioning Modal */}
       <Dialog open={isStaffModalOpen} onOpenChange={setIsStaffModalOpen}>
-        <DialogContent className="bg-obsidian-surface border border-obsidian-border rounded-2xl w-full max-w-lg p-6 shadow-elevated space-y-5 max-h-[90vh] overflow-y-auto sm:max-w-lg text-slate-100">
-          <DialogHeader className="border-b border-obsidian-border pb-4 p-0">
-            <DialogTitle className="text-base font-bold text-white">Provision Staff Member</DialogTitle>
-            <DialogDescription className="text-xs text-slate-400 mt-0.5">
+        <DialogContent className="w-full max-w-lg p-6 space-y-5 max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader className="border-b border-border pb-4 p-0">
+            <DialogTitle className="text-base font-bold text-foreground">Provision Staff Member</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
               Create operational credentials and assign category pool routing
             </DialogDescription>
           </DialogHeader>
 
           {staffModalError && (
-            <Alert variant="destructive" className="p-3 bg-red-500/10 border-red-500/20 rounded-xl flex items-start gap-2 text-xs text-red-300 font-medium">
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-400" />
+            <Alert variant="destructive" className="p-3 flex items-start gap-2 text-xs font-medium">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <AlertDescription>{staffModalError}</AlertDescription>
             </Alert>
           )}
@@ -829,7 +830,7 @@ export function AdminDashboard() {
             <div>
               <Label
                 htmlFor="staff-name"
-                className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1"
+                className="block text-xs font-semibold uppercase tracking-wider text-foreground mb-1"
               >
                 Full Name
               </Label>
@@ -840,14 +841,14 @@ export function AdminDashboard() {
                 placeholder="e.g. Ramesh Kumar"
                 value={staffForm.name}
                 onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
-                className="w-full px-3.5 py-2 bg-obsidian border-obsidian-border rounded-xl text-white placeholder:text-slate-500 text-sm focus-visible:ring-indigo-500"
+                className="w-full text-sm"
               />
             </div>
 
             <div>
               <Label
                 htmlFor="staff-email"
-                className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1"
+                className="block text-xs font-semibold uppercase tracking-wider text-foreground mb-1"
               >
                 Email Address
               </Label>
@@ -858,14 +859,14 @@ export function AdminDashboard() {
                 placeholder="staff@organization.com"
                 value={staffForm.email}
                 onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
-                className="w-full px-3.5 py-2 bg-obsidian border-obsidian-border rounded-xl text-white placeholder:text-slate-500 text-sm focus-visible:ring-indigo-500"
+                className="w-full text-sm"
               />
             </div>
 
             <div>
               <Label
                 htmlFor="staff-password"
-                className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1"
+                className="block text-xs font-semibold uppercase tracking-wider text-foreground mb-1"
               >
                 Initial Password
               </Label>
@@ -877,32 +878,32 @@ export function AdminDashboard() {
                 placeholder="••••••••"
                 value={staffForm.password}
                 onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })}
-                className="w-full px-3.5 py-2 bg-obsidian border-obsidian-border rounded-xl text-white placeholder:text-slate-500 text-sm focus-visible:ring-indigo-500"
+                className="w-full text-sm"
               />
             </div>
 
             <div>
-              <Label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+              <Label className="block text-xs font-semibold uppercase tracking-wider text-foreground mb-2">
                 Assign Category Pools
               </Label>
               {categories.length === 0 ? (
-                <p className="text-xs text-amber-400">
+                <p className="text-xs text-muted-foreground">
                   No categories configured yet. Create categories first before assigning pools.
                 </p>
               ) : (
-                <div className="space-y-2 border border-obsidian-border rounded-xl p-3 bg-obsidian max-h-48 overflow-y-auto">
+                <div className="space-y-2 border border-border rounded-xl p-3 bg-muted/50 max-h-48 overflow-y-auto">
                   {categories.map((cat) => (
                     <label
                       key={cat.id}
                       htmlFor={`pool-${cat.id}`}
-                      className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-obsidian-hover rounded-lg text-sm text-slate-200 transition"
+                      className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-muted rounded-lg text-sm text-foreground transition"
                     >
                       <input
                         id={`pool-${cat.id}`}
                         type="checkbox"
                         checked={staffForm.categoryPoolIds.includes(cat.id)}
                         onChange={() => toggleCategoryPool(cat.id)}
-                        className="rounded border-obsidian-border bg-obsidian-surface text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                        className="rounded border-input text-primary focus:ring-ring h-4 w-4"
                       />
                       <span>{cat.name} ({cat.baseSlaHours}h Base SLA)</span>
                     </label>
@@ -911,19 +912,19 @@ export function AdminDashboard() {
               )}
             </div>
 
-            <DialogFooter className="flex items-center sm:justify-end gap-3 pt-4 border-t border-obsidian-border">
+            <DialogFooter className="flex items-center sm:justify-end gap-3 pt-4 border-t border-border">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsStaffModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white border-obsidian-border bg-transparent hover:bg-obsidian-hover"
+                className="px-4 py-2 text-xs font-semibold"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={savingStaff}
-                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-sm transition"
+                className="px-5 py-2 text-xs font-semibold"
               >
                 {savingStaff ? "Provisioning..." : "Provision Staff"}
               </Button>
@@ -934,19 +935,19 @@ export function AdminDashboard() {
 
       {/* Category Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="bg-obsidian-surface border border-obsidian-border rounded-2xl w-full max-w-lg p-6 shadow-elevated space-y-5 max-h-[90vh] overflow-y-auto sm:max-w-lg text-slate-100">
-          <DialogHeader className="border-b border-obsidian-border pb-4 p-0">
-            <DialogTitle className="text-base font-bold text-white">
+        <DialogContent className="w-full max-w-lg p-6 space-y-5 max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader className="border-b border-border pb-4 p-0">
+            <DialogTitle className="text-base font-bold text-foreground">
               {editingCategory ? "Edit Category SLA" : "Add Problem Category"}
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-400 mt-0.5">
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
               Configure dynamic SLA parameters and multi-tier supervisor escalation
             </DialogDescription>
           </DialogHeader>
 
           {modalError && (
-            <Alert variant="destructive" className="p-3 bg-red-500/10 border-red-500/20 rounded-xl flex items-start gap-2 text-xs text-red-300 font-medium">
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-400" />
+            <Alert variant="destructive" className="p-3 flex items-start gap-2 text-xs font-medium">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <AlertDescription>{modalError}</AlertDescription>
             </Alert>
           )}
@@ -955,7 +956,7 @@ export function AdminDashboard() {
             <div>
               <Label
                 htmlFor="category-name"
-                className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1"
+                className="block text-xs font-semibold uppercase tracking-wider text-foreground mb-1"
               >
                 Category Name
               </Label>
@@ -968,7 +969,7 @@ export function AdminDashboard() {
                 onChange={(e) =>
                   setCategoryForm({ ...categoryForm, name: e.target.value })
                 }
-                className="w-full px-3.5 py-2 bg-obsidian border-obsidian-border rounded-xl text-white placeholder:text-slate-500 text-sm focus-visible:ring-indigo-500"
+                className="w-full text-sm"
               />
             </div>
 
@@ -976,7 +977,7 @@ export function AdminDashboard() {
               <div>
                 <Label
                   htmlFor="base-sla"
-                  className="block text-[11px] font-semibold uppercase tracking-wider text-slate-300 mb-1"
+                  className="block text-[11px] font-semibold uppercase tracking-wider text-foreground mb-1"
                 >
                   Base SLA (Hours)
                 </Label>
@@ -993,14 +994,14 @@ export function AdminDashboard() {
                       baseSlaHours: parseFloat(e.target.value) || 0,
                     })
                   }
-                  className="w-full px-3 py-2 bg-obsidian border-obsidian-border rounded-xl text-white text-sm font-mono focus-visible:ring-indigo-500"
+                  className="w-full text-sm font-mono"
                 />
               </div>
 
               <div>
                 <Label
                   htmlFor="floor-hours"
-                  className="block text-[11px] font-semibold uppercase tracking-wider text-slate-300 mb-1"
+                  className="block text-[11px] font-semibold uppercase tracking-wider text-foreground mb-1"
                 >
                   Floor (Hours)
                 </Label>
@@ -1017,14 +1018,14 @@ export function AdminDashboard() {
                       floorHours: parseFloat(e.target.value) || 0,
                     })
                   }
-                  className="w-full px-3 py-2 bg-obsidian border-obsidian-border rounded-xl text-white text-sm font-mono focus-visible:ring-indigo-500"
+                  className="w-full text-sm font-mono"
                 />
               </div>
 
               <div>
                 <Label
                   htmlFor="decay-factor"
-                  className="block text-[11px] font-semibold uppercase tracking-wider text-slate-300 mb-1"
+                  className="block text-[11px] font-semibold uppercase tracking-wider text-foreground mb-1"
                 >
                   Decay Factor (α)
                 </Label>
@@ -1042,28 +1043,28 @@ export function AdminDashboard() {
                       contractionFactor: parseFloat(e.target.value) || 0,
                     })
                   }
-                  className="w-full px-3 py-2 bg-obsidian border-obsidian-border rounded-xl text-white text-sm font-mono focus-visible:ring-indigo-500"
+                  className="w-full text-sm font-mono"
                 />
               </div>
             </div>
 
             {/* Dynamic SLA Contraction Formula Note */}
-            <div className="p-3 bg-indigo-950/20 border border-indigo-500/20 rounded-xl space-y-1">
-              <div className="text-[11px] font-semibold text-indigo-300 flex items-center gap-1.5">
-                <Info className="w-3.5 h-3.5" /> Dynamic Contraction Formula
+            <div className="p-3 bg-muted border border-border rounded-xl space-y-1">
+              <div className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5 text-primary" /> Dynamic Contraction Formula
               </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed font-mono">
+              <p className="text-[11px] text-muted-foreground leading-relaxed font-mono">
                 SLA(n) = max(Floor, Base × (1 - α)ⁿ)
               </p>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Each corroborating complaint contracts the resolution deadline by α until bounded by the safety floor.
               </p>
             </div>
 
             {/* Dynamic Escalation Tiers */}
-            <div className="pt-3 border-t border-obsidian-border space-y-3">
+            <div className="pt-3 border-t border-border space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-foreground">
                   Escalation Tiers
                 </Label>
                 <Button
@@ -1071,7 +1072,7 @@ export function AdminDashboard() {
                   variant="ghost"
                   size="sm"
                   onClick={addTierTarget}
-                  className="text-xs text-indigo-400 hover:text-indigo-300 hover:bg-transparent flex items-center gap-1 font-semibold p-0 h-auto"
+                  className="text-xs text-primary hover:bg-transparent flex items-center gap-1 font-semibold p-0 h-auto"
                 >
                   <PlusCircle className="w-3.5 h-3.5" /> Add Tier
                 </Button>
@@ -1079,9 +1080,9 @@ export function AdminDashboard() {
 
               <div className="space-y-2.5">
                 {categoryForm.tierTargets?.map((t, idx) => (
-                  <div key={idx} className="p-3 bg-obsidian border border-obsidian-border rounded-xl space-y-2">
+                  <div key={idx} className="p-3 bg-muted border border-border rounded-xl space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-indigo-300 font-mono">
+                      <span className="text-xs font-bold text-foreground font-mono">
                         Tier {t.tier} Configuration
                       </span>
                       {categoryForm.tierTargets && categoryForm.tierTargets.length > 1 && (
@@ -1090,7 +1091,7 @@ export function AdminDashboard() {
                           variant="ghost"
                           size="icon"
                           onClick={() => removeTierTarget(idx)}
-                          className="h-6 w-6 text-slate-500 hover:text-red-400 hover:bg-obsidian-hover p-1"
+                          className="h-6 w-6 text-muted-foreground hover:text-destructive p-1"
                           title="Remove Tier"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1101,7 +1102,7 @@ export function AdminDashboard() {
                       <div>
                         <Label
                           htmlFor={`tier-role-${idx}`}
-                          className="text-[10px] text-slate-400 font-medium block mb-1"
+                          className="text-[10px] text-muted-foreground font-medium block mb-1"
                         >
                           Supervisor Role / Authority
                         </Label>
@@ -1117,13 +1118,13 @@ export function AdminDashboard() {
                               supervisorRole: e.target.value,
                             });
                           }}
-                          className="w-full px-3 py-1.5 bg-obsidian-surface border-obsidian-border rounded-xl text-white text-xs focus-visible:ring-indigo-500"
+                          className="w-full text-xs"
                         />
                       </div>
                       <div>
                         <Label
                           htmlFor={`tier-sla-${idx}`}
-                          className="text-[10px] text-slate-400 font-medium block mb-1"
+                          className="text-[10px] text-muted-foreground font-medium block mb-1"
                         >
                           Tier Escalation SLA (Hours)
                         </Label>
@@ -1140,14 +1141,14 @@ export function AdminDashboard() {
                               slaHours: val > 0 ? val : undefined,
                             });
                           }}
-                          className="w-full px-3 py-1.5 bg-obsidian-surface border-obsidian-border rounded-xl text-white text-xs font-mono focus-visible:ring-indigo-500"
+                          className="w-full text-xs font-mono"
                         />
                       </div>
                     </div>
                     <div>
                       <Label
                         htmlFor={`tier-user-${idx}`}
-                        className="text-[10px] text-slate-400 font-medium block mb-1"
+                        className="text-[10px] text-muted-foreground font-medium block mb-1"
                       >
                         Designated Staff ID or Email (Optional)
                       </Label>
@@ -1164,7 +1165,7 @@ export function AdminDashboard() {
                           };
                           setCategoryForm({ ...categoryForm, tierTargets: updated });
                         }}
-                        className="w-full px-3 py-1.5 bg-obsidian-surface border-obsidian-border rounded-xl text-white text-xs font-mono focus-visible:ring-indigo-500"
+                        className="w-full text-xs font-mono"
                       />
                     </div>
                   </div>
@@ -1172,19 +1173,19 @@ export function AdminDashboard() {
               </div>
             </div>
 
-            <DialogFooter className="pt-4 border-t border-obsidian-border flex sm:justify-end gap-3">
+            <DialogFooter className="pt-4 border-t border-border flex sm:justify-end gap-3">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-obsidian-elevated hover:bg-obsidian-hover text-slate-300 rounded-xl text-xs font-semibold border-obsidian-border"
+                className="px-4 py-2 text-xs font-semibold"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={savingCategory}
-                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition disabled:opacity-50"
+                className="px-5 py-2 text-xs font-semibold"
               >
                 {savingCategory ? "Saving..." : editingCategory ? "Update Category" : "Save Category"}
               </Button>

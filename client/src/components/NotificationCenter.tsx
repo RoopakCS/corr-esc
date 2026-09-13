@@ -166,13 +166,13 @@ export function NotificationCenter({
           setIsOpen((prev) => !prev);
           fetchNotifs();
         }}
-        className="relative size-10 rounded-xl text-slate-400 hover:text-white hover:bg-obsidian-hover transition focus-ring"
+        className="relative size-10 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition focus-ring"
       >
         <Bell className="size-5" />
         {unreadCount > 0 && (
           <span
             data-testid="notification-unread-badge"
-            className="absolute -top-0.5 -right-0.5 min-w-[1.125rem] h-[1.125rem] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-obsidian shadow-sm animate-pulse"
+            className="absolute -top-0.5 -right-0.5 min-w-[1.125rem] h-[1.125rem] px-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background shadow-xs animate-pulse"
           >
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
@@ -183,14 +183,14 @@ export function NotificationCenter({
       {isOpen && (
         <Card
           data-testid="notification-drawer"
-          className="absolute right-0 mt-3 w-80 sm:w-96 bg-obsidian-surface border-obsidian-border rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[80vh] text-slate-100 p-0 gap-0"
+          className="absolute right-0 mt-3 w-80 sm:w-96 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[80vh] p-0 gap-0"
         >
           {/* Header */}
-          <CardHeader className="p-4 border-b border-obsidian-border flex flex-row items-center justify-between bg-obsidian/90 backdrop-blur space-y-0">
+          <CardHeader className="p-4 border-b flex flex-row items-center justify-between bg-card space-y-0">
             <div className="flex items-center gap-2">
-              <CardTitle className="text-sm font-bold text-white">Notifications</CardTitle>
+              <CardTitle className="text-sm font-bold text-foreground">Notifications</CardTitle>
               {unreadCount > 0 && (
-                <Badge variant="outline" className="text-xs bg-indigo-500/10 text-indigo-400 border-indigo-500/20 px-2 py-0.5">
+                <Badge variant="secondary" className="text-xs px-2 py-0.5">
                   {unreadCount} new
                 </Badge>
               )}
@@ -204,7 +204,7 @@ export function NotificationCenter({
                   data-testid="mark-all-read-btn"
                   onClick={handleMarkAllAsRead}
                   disabled={markingAll}
-                  className="h-7 text-xs text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 px-2 flex items-center gap-1"
+                  className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10 px-2 flex items-center gap-1"
                   title="Mark all as read"
                 >
                   <CheckCheck className="size-3.5" />
@@ -215,7 +215,7 @@ export function NotificationCenter({
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsOpen(false)}
-                className="size-7 text-slate-400 hover:text-white rounded-lg hover:bg-obsidian-hover"
+                className="size-7 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted"
               >
                 <X className="size-4" />
               </Button>
@@ -223,16 +223,12 @@ export function NotificationCenter({
           </CardHeader>
 
           {/* Filter Tabs */}
-          <div className="flex items-center border-b border-obsidian-border px-4 py-2 bg-obsidian-muted/50 text-xs font-medium gap-2">
+          <div className="flex items-center border-b px-4 py-2 bg-muted/50 text-xs font-medium gap-2">
             <Button
               variant={filter === "all" ? "default" : "ghost"}
               size="sm"
               onClick={() => setFilter("all")}
-              className={`h-7 px-2.5 text-xs ${
-                filter === "all"
-                  ? "bg-indigo-600 text-white font-semibold"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
+              className="h-7 px-2.5 text-xs"
             >
               All ({notifications.length})
             </Button>
@@ -240,21 +236,17 @@ export function NotificationCenter({
               variant={filter === "unread" ? "default" : "ghost"}
               size="sm"
               onClick={() => setFilter("unread")}
-              className={`h-7 px-2.5 text-xs ${
-                filter === "unread"
-                  ? "bg-indigo-600 text-white font-semibold"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
+              className="h-7 px-2.5 text-xs"
             >
               Unread ({unreadCount})
             </Button>
           </div>
 
           {/* Notification List */}
-          <CardContent className="p-0 flex-1 overflow-y-auto divide-y divide-obsidian-border/60 max-h-96">
+          <CardContent className="p-0 flex-1 overflow-y-auto divide-y max-h-96">
             {filteredNotifications.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 flex flex-col items-center gap-2">
-                <Bell className="size-8 opacity-30 text-slate-400" />
+              <div className="p-8 text-center text-muted-foreground flex flex-col items-center gap-2">
+                <Bell className="size-8 opacity-30 text-muted-foreground" />
                 <p className="text-xs">No notifications to display.</p>
               </div>
             ) : (
@@ -266,18 +258,18 @@ export function NotificationCenter({
                     key={notif.id}
                     data-testid={`notification-item-${notif.id}`}
                     onClick={() => handleItemClick(notif)}
-                    className={`p-3.5 hover:bg-obsidian-hover/60 transition cursor-pointer flex items-start gap-3 text-left ${
-                      !notif.isRead ? "bg-indigo-950/20" : ""
+                    className={`p-3.5 hover:bg-muted/60 transition cursor-pointer flex items-start gap-3 text-left ${
+                      !notif.isRead ? "bg-primary/5" : ""
                     }`}
                   >
                     {/* Icon */}
                     <div
                       className={`p-2 rounded-xl flex-shrink-0 mt-0.5 ${
                         isHighPriority
-                          ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                          ? "bg-destructive/10 text-destructive border border-destructive/20"
                           : notif.type.includes("resolved") || notif.type.includes("confirmed")
-                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                          : "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
+                          ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                          : "bg-primary/10 text-primary border border-primary/20"
                       }`}
                     >
                       {isHighPriority ? (
@@ -293,22 +285,22 @@ export function NotificationCenter({
                         <h4
                           className={`text-xs truncate ${
                             !notif.isRead
-                              ? "font-bold text-white"
-                              : "font-medium text-slate-300"
+                              ? "font-bold text-foreground"
+                              : "font-medium text-muted-foreground"
                           }`}
                         >
                           {notif.title}
                         </h4>
                         {!notif.isRead && (
-                          <span className="size-2 rounded-full bg-indigo-500 flex-shrink-0" />
+                          <span className="size-2 rounded-full bg-primary flex-shrink-0" />
                         )}
                       </div>
 
-                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                         {notif.message}
                       </p>
 
-                      <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500">
+                      <div className="flex items-center justify-between pt-1 text-[11px] text-muted-foreground">
                         <span className="flex items-center gap-1 font-mono tabular-nums">
                           <Clock className="size-3" />
                           <span>{new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -320,7 +312,7 @@ export function NotificationCenter({
                               type="button"
                               data-testid={`mark-read-${notif.id}`}
                               onClick={(e) => handleMarkAsRead(notif.id, e)}
-                              className="text-slate-400 hover:text-indigo-300 p-0.5 rounded transition"
+                              className="text-muted-foreground hover:text-foreground p-0.5 rounded transition"
                               title="Mark as read"
                             >
                               <Check className="size-3.5" />
@@ -333,7 +325,7 @@ export function NotificationCenter({
                                 e.stopPropagation();
                                 handleItemClick(notif);
                               }}
-                              className="text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5 text-[11px] font-medium transition cursor-pointer"
+                              className="text-primary hover:underline flex items-center gap-0.5 text-[11px] font-medium transition cursor-pointer"
                             >
                               <span>View</span>
                               <ExternalLink className="size-2.5" />

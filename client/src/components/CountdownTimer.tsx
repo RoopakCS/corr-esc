@@ -146,12 +146,12 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
       aria-label={`SLA countdown: ${formattedTime}, status: ${theme.label}`}
       data-testid="countdown-timer"
       data-severity={severity}
-      className={`rounded-xl p-3.5 border space-y-2.5 bg-obsidian-surface/95 border-obsidian-border shadow-surface transition-all duration-smooth hover:border-obsidian-subtle ${className}`}
+      className={`rounded-xl p-3.5 border space-y-2.5 bg-card border-border shadow-sm transition-all ${className}`}
     >
       <div className="flex items-center justify-between text-xs">
-        <span className="text-slate-400 flex items-center gap-1.5 font-sans">
-          <Clock className="w-3.5 h-3.5 text-slate-400" />
-          {showLabel && <span className="font-medium text-slate-300">SLA Countdown:</span>}
+        <span className="text-muted-foreground flex items-center gap-1.5 font-sans">
+          <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+          {showLabel && <span className="font-medium text-foreground">SLA Countdown:</span>}
         </span>
         <Badge
           variant="outline"
@@ -166,7 +166,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
         <div className={`text-lg font-mono font-bold tracking-tight tabular-nums ${theme.badgeText}`}>
           {formattedTime}
         </div>
-        <div className="text-[11px] text-slate-400 font-mono tabular-nums">
+        <div className="text-[11px] text-muted-foreground font-mono tabular-nums">
           Target: {new Date(deadline).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </div>
       </div>
@@ -175,7 +175,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
       {totalDurationMs !== undefined && (
         <Progress
           value={Math.round(ratio * 100)}
-          className={`h-1.5 w-full bg-obsidian-muted border border-obsidian-border/60 [&>[data-slot=progress-indicator]]:${theme.barFill}`}
+          className={`h-1.5 w-full bg-muted border border-border [&>[data-slot=progress-indicator]]:${theme.barFill}`}
         />
       )}
     </div>

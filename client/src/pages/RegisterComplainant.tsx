@@ -49,37 +49,37 @@ export function RegisterComplainant() {
   };
 
   return (
-    <div className="min-h-screen bg-obsidian text-slate-100 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background text-foreground flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col gap-6">
         <div className="text-center flex flex-col items-center gap-3">
-          <div className="inline-flex p-3 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 shadow-surface">
+          <div className="inline-flex p-3 rounded-2xl bg-primary/10 border border-primary/20 text-primary">
             <UserPlus className="size-7" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
             Complainant Registration
           </h1>
           <div>
-            <Badge variant="outline" className="px-3 py-1 rounded-full bg-obsidian-surface border-obsidian-border text-xs font-mono text-emerald-400">
+            <Badge variant="outline" className="px-3 py-1 rounded-full text-xs font-mono">
               /org/{slug}
             </Badge>
           </div>
         </div>
 
         {/* Privacy reassurance callout */}
-        <Alert className="bg-obsidian-surface border-obsidian-border text-slate-300 shadow-surface">
-          <ShieldCheck className="size-4 text-emerald-400" />
-          <AlertTitle className="font-semibold text-slate-200 text-xs">
+        <Alert className="border shadow-sm">
+          <ShieldCheck className="size-4 text-primary" />
+          <AlertTitle className="font-semibold text-xs">
             Blind Complaint Ingestion
           </AlertTitle>
-          <AlertDescription className="text-[11px] text-slate-400 leading-relaxed mt-1">
+          <AlertDescription className="text-[11px] text-muted-foreground leading-relaxed mt-1">
             All submitted complaints are processed independently without public exposure, ensuring unbiased SLA clustering and dynamic acceleration.
           </AlertDescription>
         </Alert>
 
-        <Card className="bg-obsidian-surface/95 border-obsidian-border rounded-2xl shadow-elevated text-slate-100">
+        <Card className="rounded-2xl shadow-lg">
           <CardContent className="p-6 sm:p-8 flex flex-col gap-6">
             {error && (
-              <Alert variant="destructive" className="bg-rose-500/10 border-rose-500/30 text-rose-300">
+              <Alert variant="destructive">
                 <AlertCircle className="size-4" />
                 <AlertDescription className="text-xs font-medium">
                   {error}
@@ -91,7 +91,7 @@ export function RegisterComplainant() {
               <div className="flex flex-col gap-1.5">
                 <Label
                   htmlFor="complainant-name"
-                  className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                 >
                   Full Name
                 </Label>
@@ -104,14 +104,14 @@ export function RegisterComplainant() {
                     setFormData({ ...formData, name: e.target.value })
                   }
                   placeholder="e.g. John Doe"
-                  className="bg-obsidian border-obsidian-border text-slate-100 placeholder:text-slate-500 focus-ring rounded-xl h-11"
+                  className="rounded-xl h-11"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <Label
                   htmlFor="complainant-email"
-                  className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                 >
                   Email Address
                 </Label>
@@ -124,14 +124,14 @@ export function RegisterComplainant() {
                     setFormData({ ...formData, email: e.target.value })
                   }
                   placeholder="you@domain.com"
-                  className="bg-obsidian border-obsidian-border text-slate-100 placeholder:text-slate-500 focus-ring rounded-xl h-11"
+                  className="rounded-xl h-11"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <Label
                   htmlFor="complainant-password"
-                  className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                 >
                   Password
                 </Label>
@@ -145,14 +145,14 @@ export function RegisterComplainant() {
                     setFormData({ ...formData, password: e.target.value })
                   }
                   placeholder="••••••••"
-                  className="bg-obsidian border-obsidian-border text-slate-100 placeholder:text-slate-500 focus-ring rounded-xl h-11"
+                  className="rounded-xl h-11"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <Label
                   htmlFor="complainant-confirm-password"
-                  className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                 >
                   Confirm Password
                 </Label>
@@ -166,27 +166,27 @@ export function RegisterComplainant() {
                     setFormData({ ...formData, confirmPassword: e.target.value })
                   }
                   placeholder="••••••••"
-                  className="bg-obsidian border-obsidian-border text-slate-100 placeholder:text-slate-500 focus-ring rounded-xl h-11"
+                  className="rounded-xl h-11"
                 />
               </div>
 
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 focus-ring pressable shadow-lg shadow-emerald-600/20 disabled:opacity-50 transition-all duration-200 mt-2"
+                className="w-full h-12 rounded-xl text-sm font-semibold mt-2"
               >
                 {loading ? "Creating Account..." : "Create Complainant Account"}
               </Button>
             </form>
           </CardContent>
 
-          <CardFooter className="p-6 sm:p-8 pt-0 flex flex-col gap-3 text-center text-xs text-slate-400">
-            <Separator className="bg-obsidian-border mb-2" />
+          <CardFooter className="p-6 sm:p-8 pt-0 flex flex-col gap-3 text-center text-xs text-muted-foreground">
+            <Separator className="mb-2" />
             <div>
               <span>Already have an account? </span>
               <Link
                 to={`/org/${slug}/login`}
-                className="text-emerald-400 hover:text-emerald-300 font-semibold transition"
+                className="text-primary hover:underline font-semibold transition"
               >
                 Sign In
               </Link>
@@ -194,7 +194,7 @@ export function RegisterComplainant() {
             <div>
               <Link
                 to="/"
-                className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-400 transition text-[11px]"
+                className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition text-[11px]"
               >
                 <ArrowLeft className="size-3" />
                 <span>Switch or create another organization</span>

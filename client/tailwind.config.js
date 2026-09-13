@@ -47,16 +47,6 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
-        obsidian: {
-          DEFAULT: "#0A0C10",
-          surface: "#12151D",
-          hover: "#181D28",
-          card: "#131722",
-          elevated: "#1E2433",
-          border: "#252C3D",
-          muted: "#161B26",
-          subtle: "#2A3245",
-        },
         // Incident operational lifecycle phase (CONTEXT.md)
         lifecycle: {
           new: {

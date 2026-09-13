@@ -189,10 +189,10 @@ export function ComplainantPortal() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-obsidian text-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full size-8 border-2 border-indigo-500 border-t-transparent"></div>
-          <span className="text-xs text-slate-400 font-mono tracking-wider">
+          <div className="animate-spin rounded-full size-8 border-2 border-primary border-t-transparent"></div>
+          <span className="text-xs text-muted-foreground font-mono tracking-wider">
             Loading Complainant Portal...
           </span>
         </div>
@@ -201,21 +201,21 @@ export function ComplainantPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-obsidian text-slate-100 flex flex-col antialiased">
+    <div className="min-h-screen bg-background text-foreground flex flex-col antialiased">
       {/* Navbar */}
-      <header className="subtle-glass sticky top-0 z-30 border-b border-obsidian-border bg-obsidian/90">
+      <header className="sticky top-0 z-30 border-b bg-card/90 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 shadow-surface">
+            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 text-primary shadow-xs">
               <FileText className="size-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-bold tracking-tight text-white leading-none">
+                <h1 className="text-base sm:text-lg font-bold tracking-tight text-foreground leading-none">
                   Complainant Portal
                 </h1>
               </div>
-              <span className="text-xs text-slate-400 font-mono">/org/{slug}</span>
+              <span className="text-xs text-muted-foreground font-mono">/org/{slug}</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -229,8 +229,8 @@ export function ComplainantPortal() {
                   const element = document.getElementById(`complaint-${notif.complaintId}`);
                   if (element) {
                     element.scrollIntoView({ behavior: "smooth" });
-                    element.classList.add("ring-2", "ring-indigo-500");
-                    setTimeout(() => element.classList.remove("ring-2", "ring-indigo-500"), 3000);
+                    element.classList.add("ring-2", "ring-primary");
+                    setTimeout(() => element.classList.remove("ring-2", "ring-primary"), 3000);
                   }
                 }
               }}
@@ -239,9 +239,9 @@ export function ComplainantPortal() {
               variant="outline"
               size="sm"
               onClick={handleLogout}
-              className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-200 bg-obsidian-surface border-obsidian-border hover:border-obsidian-subtle pressable h-9 rounded-xl"
+              className="flex items-center gap-2 text-xs font-semibold h-9 rounded-xl"
             >
-              <LogOut className="size-3.5 text-slate-400" />
+              <LogOut className="size-3.5 text-muted-foreground" />
               <span>Sign Out</span>
             </Button>
           </div>
@@ -251,8 +251,8 @@ export function ComplainantPortal() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full flex flex-col gap-6">
         {error && (
-          <Alert variant="destructive" className="bg-rose-500/10 border-rose-500/30 text-rose-300">
-            <AlertCircle className="size-4 text-rose-400" />
+          <Alert variant="destructive">
+            <AlertCircle className="size-4" />
             <AlertDescription className="text-xs font-medium">
               {error}
             </AlertDescription>
@@ -260,8 +260,8 @@ export function ComplainantPortal() {
         )}
 
         {successMsg && (
-          <Alert className="bg-emerald-500/10 border-emerald-500/30 text-emerald-300">
-            <CheckCircle2 className="size-4 text-emerald-400" />
+          <Alert className="border-emerald-500/30 text-emerald-500">
+            <CheckCircle2 className="size-4 text-emerald-500" />
             <AlertDescription className="text-xs font-medium">
               {successMsg}
             </AlertDescription>
@@ -271,17 +271,17 @@ export function ComplainantPortal() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Complaint Submission Composer */}
           <div className="lg:col-span-5">
-            <Card className="bg-obsidian-surface/95 border-obsidian-border rounded-2xl shadow-elevated sticky top-24 text-slate-100">
+            <Card className="rounded-2xl shadow-lg sticky top-24">
               <CardHeader className="p-6 pb-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                  <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary">
                     <PlusCircle className="size-4" />
                   </div>
-                  <CardTitle className="text-base font-bold text-white tracking-tight">
+                  <CardTitle className="text-base font-bold text-foreground tracking-tight">
                     File a Complaint
                   </CardTitle>
                 </div>
-                <CardDescription className="text-xs text-slate-400 leading-relaxed">
+                <CardDescription className="text-xs text-muted-foreground leading-relaxed">
                   Submissions are blind. Other complainants cannot view your submissions.
                 </CardDescription>
               </CardHeader>
@@ -293,15 +293,15 @@ export function ComplainantPortal() {
                     <div className="flex items-center justify-between">
                       <Label
                         htmlFor="complaint-category"
-                        className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+                        className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                       >
                         Category
                       </Label>
-                      <span className="text-[11px] text-slate-500">Select domain</span>
+                      <span className="text-[11px] text-muted-foreground">Select domain</span>
                     </div>
 
                     {categories.length === 0 ? (
-                      <p className="text-xs text-amber-400">
+                      <p className="text-xs text-amber-500">
                         No categories configured by organization administrator.
                       </p>
                     ) : (
@@ -319,14 +319,10 @@ export function ComplainantPortal() {
                                 onClick={() =>
                                   setFormData((prev) => ({ ...prev, categoryId: cat.id }))
                                 }
-                                className={`h-8 px-3 text-xs font-medium rounded-lg border transition-all duration-200 pressable ${
-                                  isSelected
-                                    ? "bg-indigo-600/20 border-indigo-500 text-indigo-300 shadow-sm hover:bg-indigo-600/30"
-                                    : "bg-obsidian border-obsidian-border text-slate-400 hover:text-slate-200 hover:border-obsidian-subtle hover:bg-obsidian-hover"
-                                }`}
+                                className="h-8 px-3 text-xs font-medium rounded-lg"
                               >
                                 {cat.name}
-                                <span className="ml-1 text-[10px] text-slate-500 font-mono">
+                                <span className="ml-1 text-[10px] opacity-70 font-mono">
                                   {cat.baseSlaHours}h
                                 </span>
                               </Button>
@@ -343,7 +339,7 @@ export function ComplainantPortal() {
                             onChange={(e) =>
                               setFormData({ ...formData, categoryId: e.target.value })
                             }
-                            className="w-full bg-obsidian border border-obsidian-border rounded-xl px-3.5 py-2 text-xs text-slate-200 appearance-none focus-ring pr-9 font-mono"
+                            className="w-full bg-background border border-input rounded-xl px-3.5 py-2 text-xs text-foreground appearance-none focus-ring pr-9 font-mono"
                           >
                             {categories.map((category) => (
                               <option key={category.id} value={category.id}>
@@ -351,7 +347,7 @@ export function ComplainantPortal() {
                               </option>
                             ))}
                           </select>
-                          <ChevronDown className="size-4 text-slate-500 absolute right-3 top-2.5 pointer-events-none" />
+                          <ChevronDown className="size-4 text-muted-foreground absolute right-3 top-2.5 pointer-events-none" />
                         </div>
                       </div>
                     )}
@@ -362,11 +358,11 @@ export function ComplainantPortal() {
                     <div className="flex items-center justify-between">
                       <Label
                         htmlFor="complaint-title"
-                        className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+                        className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                       >
                         Title
                       </Label>
-                      <span className="text-[11px] text-slate-500 font-mono tabular-nums">
+                      <span className="text-[11px] text-muted-foreground font-mono tabular-nums">
                         {formData.title.length}/100
                       </span>
                     </div>
@@ -380,7 +376,7 @@ export function ComplainantPortal() {
                         setFormData({ ...formData, title: e.target.value })
                       }
                       placeholder="Brief summary of the complaint"
-                      className="bg-obsidian border-obsidian-border text-xs text-slate-100 placeholder:text-slate-500 focus-ring rounded-xl h-10"
+                      className="rounded-xl h-10 text-xs"
                     />
                   </div>
 
@@ -389,11 +385,11 @@ export function ComplainantPortal() {
                     <div className="flex items-center justify-between">
                       <Label
                         htmlFor="location-context"
-                        className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+                        className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                       >
                         Location Context
                       </Label>
-                      <span className="text-[10px] text-slate-500">Specific spot</span>
+                      <span className="text-[10px] text-muted-foreground">Specific spot</span>
                     </div>
                     <div className="relative">
                       <Input
@@ -404,12 +400,12 @@ export function ComplainantPortal() {
                           setFormData({ ...formData, locationContext: e.target.value })
                         }
                         placeholder="e.g. Block C, 3rd Floor, Room 304"
-                        className="bg-obsidian border-obsidian-border pl-9 text-xs text-slate-100 placeholder:text-slate-500 focus-ring rounded-xl h-10"
+                        className="pl-9 rounded-xl h-10 text-xs"
                       />
-                      <MapPin className="size-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
+                      <MapPin className="size-4 text-muted-foreground absolute left-3 top-3 pointer-events-none" />
                     </div>
-                    <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                      <Info className="size-3 text-slate-400" />
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <Info className="size-3 text-muted-foreground" />
                       Exact physical location accelerates staff dispatch and SLA response.
                     </p>
                   </div>
@@ -419,11 +415,11 @@ export function ComplainantPortal() {
                     <div className="flex items-center justify-between">
                       <Label
                         htmlFor="complaint-description"
-                        className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+                        className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                       >
                         Detailed Description
                       </Label>
-                      <span className="text-[11px] text-slate-500 font-mono tabular-nums">
+                      <span className="text-[11px] text-muted-foreground font-mono tabular-nums">
                         {formData.description.length}/1000
                       </span>
                     </div>
@@ -437,7 +433,7 @@ export function ComplainantPortal() {
                         setFormData({ ...formData, description: e.target.value })
                       }
                       placeholder="Provide full details regarding what happened and needs attention..."
-                      className="bg-obsidian border-obsidian-border text-xs text-slate-100 placeholder:text-slate-500 focus-ring rounded-xl resize-none"
+                      className="rounded-xl resize-none text-xs"
                     />
                   </div>
 
@@ -446,13 +442,13 @@ export function ComplainantPortal() {
                     <div className="flex items-center justify-between">
                       <Label
                         htmlFor="photo-url"
-                        className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+                        className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                       >
                         Photo Attachment URL (Optional)
                       </Label>
-                      <span className="text-[10px] text-slate-500">Image evidence</span>
+                      <span className="text-[10px] text-muted-foreground">Image evidence</span>
                     </div>
-                    <div className="border border-dashed border-obsidian-border hover:border-obsidian-subtle rounded-xl p-3 bg-obsidian/60 transition-all duration-200 flex flex-col gap-2">
+                    <div className="border border-dashed border-border hover:border-muted-foreground/40 rounded-xl p-3 bg-muted/20 transition-all duration-200 flex flex-col gap-2">
                       <div className="relative">
                         <Input
                           id="photo-url"
@@ -462,32 +458,32 @@ export function ComplainantPortal() {
                             setFormData({ ...formData, photoUrl: e.target.value })
                           }
                           placeholder="https://example.com/photo.jpg"
-                          className="bg-obsidian border-obsidian-border pl-9 text-xs text-slate-100 placeholder:text-slate-500 focus-ring rounded-lg font-mono h-9"
+                          className="pl-9 rounded-lg font-mono h-9 text-xs"
                         />
-                        <ImageIcon className="size-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                        <ImageIcon className="size-4 text-muted-foreground absolute left-3 top-2.5 pointer-events-none" />
                       </div>
-                      <p className="text-[10px] text-slate-500 text-center">
+                      <p className="text-[10px] text-muted-foreground text-center">
                         Paste a direct image URL for physical repair evidence verification
                       </p>
                     </div>
 
                     {/* Visual Thumbnail Preview */}
                     {formData.photoUrl && (
-                      <div className="mt-1 p-2 rounded-xl bg-obsidian border border-obsidian-border flex items-center justify-between gap-3">
+                      <div className="mt-1 p-2 rounded-xl bg-muted/40 border border-border flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <img
                             src={formData.photoUrl}
                             alt="Attachment preview"
-                            className="size-12 object-cover rounded-lg border border-obsidian-border flex-shrink-0 bg-slate-900"
+                            className="size-12 object-cover rounded-lg border border-border flex-shrink-0 bg-muted"
                             onError={(e) => {
                               (e.target as HTMLElement).style.display = "none";
                             }}
                           />
                           <div className="min-w-0">
-                            <p className="text-[11px] font-medium text-slate-300 truncate">
+                            <p className="text-[11px] font-medium text-foreground truncate">
                               Evidence preview attached
                             </p>
-                            <p className="text-[10px] text-slate-500 truncate font-mono">
+                            <p className="text-[10px] text-muted-foreground truncate font-mono">
                               {formData.photoUrl}
                             </p>
                           </div>
@@ -498,7 +494,7 @@ export function ComplainantPortal() {
                           size="icon"
                           onClick={() => setFormData((prev) => ({ ...prev, photoUrl: "" }))}
                           aria-label="Remove photo"
-                          className="size-7 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10"
+                          className="size-7 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         >
                           <X className="size-4" />
                         </Button>
@@ -509,7 +505,7 @@ export function ComplainantPortal() {
                   <Button
                     type="submit"
                     disabled={submitting || categories.length === 0}
-                    className="w-full h-11 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 focus-ring pressable shadow-lg shadow-indigo-600/20 transition-all duration-200 flex items-center justify-center gap-2 mt-1"
+                    className="w-full h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 mt-1"
                   >
                     <PlusCircle className="size-4" />
                     <span>{submitting ? "Submitting..." : "Submit Complaint"}</span>
@@ -523,25 +519,25 @@ export function ComplainantPortal() {
           <div className="lg:col-span-7 flex flex-col gap-6">
             {/* Top-Level High-Priority 24-Hour Resolution Verification Banner */}
             {pendingVerificationComplaints.length > 0 && (
-              <Card className="bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-purple-950/40 border-2 border-purple-500/40 shadow-glowViolet text-slate-100 rounded-2xl">
+              <Card className="border-2 border-primary/40 shadow-sm rounded-2xl bg-card">
                 <CardHeader className="p-5 pb-3">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-300 flex-shrink-0 mt-0.5">
-                      <Sparkles className="size-5 animate-pulse" />
+                    <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 text-primary flex-shrink-0 mt-0.5">
+                      <Sparkles className="size-5" />
                     </div>
                     <div className="flex flex-col gap-1 flex-1">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border-purple-500/30">
+                        <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider">
                           Action Required
                         </Badge>
-                        <CardTitle className="text-sm font-bold text-white">
+                        <CardTitle className="text-sm font-bold text-foreground">
                           Resolution Verification Grace Period ({pendingVerificationComplaints.length})
                         </CardTitle>
                       </div>
-                      <p className="text-xs text-slate-300 leading-relaxed">
+                      <p className="text-xs text-foreground leading-relaxed">
                         Staff reported this issue resolved. Is it fixed for you?
                       </p>
-                      <CardDescription className="text-[11px] text-purple-200/80 leading-relaxed">
+                      <CardDescription className="text-[11px] text-muted-foreground leading-relaxed">
                         This incident is in its 24-hour verification grace period. Please confirm if the physical repair was completed to your satisfaction.
                       </CardDescription>
                     </div>
@@ -552,20 +548,20 @@ export function ComplainantPortal() {
                   {pendingVerificationComplaints.map((pendingComplaint) => (
                     <div
                       key={pendingComplaint.id}
-                      className="p-3.5 rounded-xl bg-obsidian/80 border border-purple-500/30 flex flex-col gap-3"
+                      className="p-3.5 rounded-xl bg-muted/30 border border-border flex flex-col gap-3"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <span className="text-xs font-semibold text-slate-200">
+                          <span className="text-xs font-semibold text-foreground">
                             {pendingComplaint.title}
                           </span>
-                          <span className="block text-[11px] text-slate-400 font-mono">
+                          <span className="block text-[11px] text-muted-foreground font-mono">
                             Category: {pendingComplaint.categoryName || "General"}
                           </span>
                         </div>
 
                         {pendingComplaint.incident?.gracePeriodExpiresAt && (
-                          <div className="flex items-center gap-1.5 text-xs text-purple-300 font-mono tabular-nums">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono tabular-nums">
                             <Clock className="size-3.5" />
                             <span>Grace window:</span>
                             <CountdownTimer
@@ -588,7 +584,7 @@ export function ComplainantPortal() {
                             })
                           }
                           placeholder="Optional explanation of why the issue is still not fixed..."
-                          className="bg-obsidian border-purple-500/40 text-xs text-white focus-visible:ring-rose-500 placeholder:text-slate-500 h-9"
+                          className="h-9 text-xs"
                         />
 
                         <div className="flex flex-wrap items-center gap-2">
@@ -596,7 +592,7 @@ export function ComplainantPortal() {
                             type="button"
                             onClick={() => handleConfirmResolution(pendingComplaint.incidentId)}
                             disabled={actionLoading}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 h-8 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow pressable"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 h-8 text-xs font-semibold"
                           >
                             <CheckCircle2 className="size-3.5" />
                             <span>Yes, Verified</span>
@@ -607,7 +603,7 @@ export function ComplainantPortal() {
                             onClick={() => handleContest(pendingComplaint.incidentId)}
                             disabled={actionLoading}
                             variant="destructive"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 h-8 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow pressable"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 h-8 text-xs font-semibold"
                           >
                             <AlertCircle className="size-3.5" />
                             <span>Still Not Fixed</span>
@@ -621,32 +617,32 @@ export function ComplainantPortal() {
             )}
 
             {/* Complaints Feed Header */}
-            <div className="flex items-center justify-between border-b border-obsidian-border pb-3">
+            <div className="flex items-center justify-between border-b pb-3">
               <div>
-                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                <h2 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
                   My Personal Complaints
                 </h2>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   Track dynamic SLA countdowns, corroboration contraction, and physical resolution
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="px-2.5 py-1 rounded-full bg-obsidian border-obsidian-border text-xs font-mono text-slate-300 tabular-nums">
+                <Badge variant="outline" className="px-2.5 py-1 rounded-full text-xs font-mono tabular-nums">
                   {complaints.length} {complaints.length === 1 ? "Complaint" : "Complaints"}
                 </Badge>
               </div>
             </div>
 
             {complaints.length === 0 ? (
-              <Card className="bg-obsidian-surface border-obsidian-border rounded-2xl p-12 text-center shadow-surface text-slate-100">
+              <Card className="rounded-2xl p-12 text-center shadow-xs">
                 <CardContent className="flex flex-col items-center gap-3 p-0">
-                  <div className="p-3 rounded-2xl bg-obsidian-muted border border-obsidian-border text-slate-500 inline-block">
+                  <div className="p-3 rounded-2xl bg-muted border text-muted-foreground inline-block">
                     <FileText className="size-8" />
                   </div>
-                  <h3 className="text-base font-semibold text-slate-200">
+                  <h3 className="text-base font-semibold text-foreground">
                     No complaints filed yet
                   </h3>
-                  <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
                     When you submit a complaint, an operational Incident will be created and you can track real-time resolution status and SLA deadlines here.
                   </p>
                 </CardContent>
@@ -661,25 +657,25 @@ export function ComplainantPortal() {
                     <Card
                       key={complaint.id}
                       id={`complaint-${complaint.id}`}
-                      className="bg-obsidian-surface border-obsidian-border hover:border-obsidian-subtle rounded-2xl shadow-surface transition-all duration-200 text-slate-100"
+                      className="rounded-2xl shadow-xs transition-all duration-200"
                     >
                       {/* Card Header: Title, Category, Status & Escalation Tier */}
                       <CardHeader className="p-5 pb-3">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="space-y-1">
-                            <CardTitle className="text-base font-bold text-white tracking-tight">
+                            <CardTitle className="text-base font-bold text-foreground tracking-tight">
                               {complaint.title}
                             </CardTitle>
                             <div className="flex flex-wrap items-center gap-2">
-                              <Badge variant="outline" className="text-[11px] bg-obsidian-muted border-obsidian-border px-2 py-0.5 rounded-md text-indigo-300 font-medium">
+                              <Badge variant="outline" className="text-[11px] px-2 py-0.5 rounded-md font-medium">
                                 {complaint.categoryName || "General"}
                               </Badge>
-                              <span className="text-[11px] text-slate-500 font-mono">
+                              <span className="text-[11px] text-muted-foreground font-mono">
                                 {new Date(complaint.createdAt).toLocaleDateString()}
                               </span>
                               {complaint.locationContext && (
-                                <div className="flex items-center text-[11px] text-slate-400 gap-1">
-                                  <MapPin className="size-3 text-slate-500 flex-shrink-0" />
+                                <div className="flex items-center text-[11px] text-muted-foreground gap-1">
+                                  <MapPin className="size-3 text-muted-foreground flex-shrink-0" />
                                   <span>{complaint.locationContext}</span>
                                 </div>
                               )}
@@ -694,7 +690,7 @@ export function ComplainantPortal() {
                             >
                               {incident?.status || "New"}
                             </span>
-                            <Badge variant="outline" className="text-xs px-2.5 py-1 rounded-full border-obsidian-border bg-obsidian text-slate-300 font-mono tabular-nums">
+                            <Badge variant="outline" className="text-xs px-2.5 py-1 rounded-full font-mono tabular-nums">
                               Tier {incident?.escalationTier ?? 0}
                             </Badge>
                           </div>
@@ -703,7 +699,7 @@ export function ComplainantPortal() {
 
                       <CardContent className="p-5 pt-0 flex flex-col gap-3">
                         {/* Complaint Description */}
-                        <p className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">
+                        <p className="text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">
                           {complaint.description}
                         </p>
 
@@ -714,7 +710,7 @@ export function ComplainantPortal() {
                               href={complaint.photoUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-medium transition"
+                              className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium transition"
                             >
                               <ImageIcon className="size-3.5" />
                               <span>View Photo Evidence</span>
@@ -724,8 +720,8 @@ export function ComplainantPortal() {
 
                         {/* Resolution Verification Grace Period Status on Card */}
                         {isResolved && (
-                          <Alert className="p-3 bg-purple-950/25 border border-purple-500/30 rounded-xl text-xs text-purple-200">
-                            <AlertCircle className="size-4 text-purple-400 flex-shrink-0" />
+                          <Alert className="p-3 border-primary/30 rounded-xl text-xs">
+                            <AlertCircle className="size-4 text-primary flex-shrink-0" />
                             <AlertDescription className="text-xs">
                               24-Hour Verification Grace Period active. Action requested in verification panel above.
                             </AlertDescription>
@@ -734,8 +730,8 @@ export function ComplainantPortal() {
 
                         {/* Previous Reopen Penalty Notice */}
                         {Boolean(incident?.reopenCount && incident.reopenCount > 0) && (
-                          <Alert variant="destructive" className="flex items-center gap-2 px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
-                            <AlertCircle className="size-3.5 text-rose-400 flex-shrink-0" />
+                          <Alert variant="destructive" className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs">
+                            <AlertCircle className="size-3.5 flex-shrink-0" />
                             <AlertDescription className="text-xs">
                               This incident was previously contested and reopened (
                               {incident?.reopenCount} time
@@ -744,22 +740,22 @@ export function ComplainantPortal() {
                           </Alert>
                         )}
 
-                        <Separator className="bg-obsidian-border my-1" />
+                        <Separator className="my-1" />
 
                         {/* Incident SLA & Corroboration Metrics Section */}
                         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-                          <div className="flex items-center gap-1.5 text-slate-400">
-                            <Layers className="size-3.5 text-indigo-400" />
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Layers className="size-3.5 text-primary" />
                             <span>
                               Corroboration count:{" "}
-                              <strong className="text-slate-200 font-mono tabular-nums">
+                              <strong className="text-foreground font-mono tabular-nums">
                                 {incident?.corroborationCount ?? 1}
                               </strong>
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2 text-slate-400">
-                            <Clock className="size-3.5 text-amber-400" />
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Clock className="size-3.5 text-amber-500" />
                             <span>SLA Deadline:</span>
                             {incident?.slaDeadline ? (
                               <div className="flex items-center gap-1.5">
@@ -768,12 +764,12 @@ export function ComplainantPortal() {
                                   createdAt={incident.createdAt || complaint.createdAt}
                                   compact
                                 />
-                                <span className="text-slate-500 text-[11px] font-mono">
+                                <span className="text-muted-foreground text-[11px] font-mono">
                                   ({new Date(incident.slaDeadline).toLocaleString()})
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-slate-500 italic">Pending</span>
+                              <span className="text-muted-foreground italic">Pending</span>
                             )}
                           </div>
                         </div>
@@ -781,7 +777,7 @@ export function ComplainantPortal() {
                         {/* Contraction Audit Timeline */}
                         {incident?.contractionAudit && incident.contractionAudit.length > 0 && (
                           <div className="pt-2">
-                            <Separator className="bg-obsidian-border mb-3" />
+                            <Separator className="mb-3" />
                             <AuditTimeline entries={incident.contractionAudit} />
                           </div>
                         )}

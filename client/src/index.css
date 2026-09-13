@@ -7,14 +7,11 @@
 
 @layer base {
   body {
-    margin: 0;
-    background-color: #0A0C10;
-    color: #F1F5F9;
-    @apply font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply tracking-tight font-semibold text-slate-100;
+    @apply tracking-tight font-semibold text-foreground;
   }
 
   p {
@@ -27,8 +24,7 @@
   select:focus-visible,
   textarea:focus-visible,
   a:focus-visible {
-    @apply outline-none ring-2 ring-sky-500/70 ring-offset-2;
-    --tw-ring-offset-color: #0A0C10;
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
   .theme {
     --font-heading: var(--font-sans);
@@ -110,16 +106,8 @@
 }
 
 @layer utilities {
-  .subtle-glass {
-    background: rgba(18, 21, 29, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(37, 44, 61, 0.8);
-  }
-
   .focus-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/70 focus-visible:ring-offset-2;
-    --tw-ring-offset-color: #0A0C10;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 
   .pressable {

@@ -41,40 +41,40 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-obsidian text-slate-100 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background text-foreground flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col gap-6">
         <div className="text-center flex flex-col items-center gap-3">
-          <div className="inline-flex p-3 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 shadow-surface">
+          <div className="inline-flex p-3 rounded-2xl bg-primary/10 border border-primary/20 text-primary">
             <LogIn className="size-7" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
             Sign in to Organization
           </h1>
           <div>
-            <Badge variant="outline" className="px-3 py-1 rounded-full bg-obsidian-surface border-obsidian-border text-xs font-mono text-indigo-400">
+            <Badge variant="outline" className="px-3 py-1 rounded-full text-xs font-mono">
               /org/{slug}
             </Badge>
           </div>
         </div>
 
-        <Card className="bg-obsidian-surface/95 border-obsidian-border rounded-2xl shadow-elevated text-slate-100">
+        <Card className="rounded-2xl shadow-lg">
           <CardHeader className="p-6 sm:p-8 pb-4">
             {/* Role access directory pill */}
-            <div className="p-3 rounded-xl bg-obsidian-muted border border-obsidian-border text-[11px] text-slate-400 flex flex-col gap-1.5">
-              <span className="font-semibold text-slate-300 block uppercase tracking-wider text-[10px]">
+            <div className="p-3 rounded-xl bg-muted border text-[11px] text-muted-foreground flex flex-col gap-1.5">
+              <span className="font-semibold text-foreground block uppercase tracking-wider text-[10px]">
                 Universal Portal Access
               </span>
               <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
-                <div className="p-1.5 rounded-lg bg-obsidian border border-obsidian-border/60 flex flex-col items-center gap-1">
-                  <User className="size-3 text-slate-400" />
+                <div className="p-1.5 rounded-lg bg-background border flex flex-col items-center gap-1">
+                  <User className="size-3 text-muted-foreground" />
                   <span>Complainant</span>
                 </div>
-                <div className="p-1.5 rounded-lg bg-obsidian border border-obsidian-border/60 flex flex-col items-center gap-1">
-                  <Briefcase className="size-3 text-slate-400" />
+                <div className="p-1.5 rounded-lg bg-background border flex flex-col items-center gap-1">
+                  <Briefcase className="size-3 text-muted-foreground" />
                   <span>Staff</span>
                 </div>
-                <div className="p-1.5 rounded-lg bg-obsidian border border-obsidian-border/60 flex flex-col items-center gap-1">
-                  <Shield className="size-3 text-slate-400" />
+                <div className="p-1.5 rounded-lg bg-background border flex flex-col items-center gap-1">
+                  <Shield className="size-3 text-muted-foreground" />
                   <span>Admin Console</span>
                 </div>
               </div>
@@ -83,7 +83,7 @@ export function Login() {
 
           <CardContent className="p-6 sm:p-8 pt-0 flex flex-col gap-5">
             {error && (
-              <Alert variant="destructive" className="bg-rose-500/10 border-rose-500/30 text-rose-300">
+              <Alert variant="destructive">
                 <AlertCircle className="size-4" />
                 <AlertDescription className="text-xs font-medium">
                   {error}
@@ -95,7 +95,7 @@ export function Login() {
               <div className="flex flex-col gap-1.5">
                 <Label
                   htmlFor="login-email"
-                  className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                 >
                   Email Address
                 </Label>
@@ -106,14 +106,14 @@ export function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@organization.com"
-                  className="bg-obsidian border-obsidian-border text-slate-100 placeholder:text-slate-500 focus-ring rounded-xl h-11"
+                  className="rounded-xl h-11"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <Label
                   htmlFor="login-password"
-                  className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                 >
                   Password
                 </Label>
@@ -124,27 +124,27 @@ export function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="bg-obsidian border-obsidian-border text-slate-100 placeholder:text-slate-500 focus-ring rounded-xl h-11"
+                  className="rounded-xl h-11"
                 />
               </div>
 
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 focus-ring pressable shadow-lg shadow-indigo-600/20 disabled:opacity-50 transition-all duration-200 mt-2"
+                className="w-full h-12 rounded-xl text-sm font-semibold mt-2"
               >
                 {loading ? "Authenticating..." : "Sign In"}
               </Button>
             </form>
           </CardContent>
 
-          <CardFooter className="p-6 sm:p-8 pt-0 flex flex-col gap-3 text-center text-xs text-slate-400">
-            <Separator className="bg-obsidian-border mb-2" />
+          <CardFooter className="p-6 sm:p-8 pt-0 flex flex-col gap-3 text-center text-xs text-muted-foreground">
+            <Separator className="mb-2" />
             <div>
               <span>New complainant? </span>
               <Link
                 to={`/org/${slug}/register`}
-                className="text-indigo-400 hover:text-indigo-300 font-semibold transition"
+                className="text-primary hover:underline font-semibold transition"
               >
                 Register Account
               </Link>
@@ -152,7 +152,7 @@ export function Login() {
             <div>
               <Link
                 to="/"
-                className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-400 transition text-[11px]"
+                className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition text-[11px]"
               >
                 <ArrowLeft className="size-3" />
                 <span>Switch or create another organization</span>
