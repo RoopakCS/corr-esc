@@ -118,6 +118,7 @@
   *,
   *::before,
   *::after {
+    --tw-ring-color: transparent;
     border-color: var(--border);
     outline: none !important;
     -webkit-tap-highlight-color: transparent;
