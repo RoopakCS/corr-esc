@@ -105,6 +105,8 @@ export default {
       },
       fontFamily: {
         sans: [
+          "Lexend Variable",
+          "Lexend",
           "Plus Jakarta Sans",
           "Inter",
           "-apple-system",
