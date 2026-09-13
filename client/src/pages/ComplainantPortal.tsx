@@ -24,6 +24,7 @@ import {
   X,
   Sparkles,
   Info,
+  Shield,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -169,13 +170,13 @@ export function ComplainantPortal() {
       case "Assigned":
         return "bg-amber-500/10 text-amber-400 border-amber-500/30";
       case "In Progress":
-        return "bg-blue-500/10 text-blue-400 border-blue-500/30";
+        return "bg-primary/10 text-primary border-primary/30";
       case "Resolved":
         return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
       case "Closed":
-        return "bg-slate-500/10 text-slate-400 border-slate-500/30";
+        return "bg-muted text-muted-foreground border-border";
       default:
-        return "bg-slate-500/10 text-slate-400 border-slate-500/30";
+        return "bg-muted text-muted-foreground border-border";
     }
   };
 
@@ -201,57 +202,80 @@ export function ComplainantPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col antialiased">
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans antialiased">
       {/* Navbar */}
-      <header className="sticky top-0 z-30 border-b bg-card/90 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 text-primary shadow-xs">
-              <FileText className="size-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-bold tracking-tight text-foreground leading-none">
-                  Complainant Portal
-                </h1>
-              </div>
-              <span className="text-xs text-muted-foreground font-mono">/org/{slug}</span>
-            </div>
+      <header className="border-b border-border bg-card/80 backdrop-blur sticky top-0 z-30 px-6 py-3.5 flex items-center justify-between">
+        <div className="flex items-center space-x-3.5">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-xs">
+            <FileText className="w-5 h-5" />
           </div>
-          <div className="flex items-center gap-3">
-            <NotificationCenter
-              slug={slug || ""}
-              onRealtimeEvent={() => {
-                loadData();
-              }}
-              onNotificationClick={(notif) => {
-                if (notif.complaintId) {
-                  const element = document.getElementById(`complaint-${notif.complaintId}`);
-                  if (element) {
-                    element.scrollIntoView({ behavior: "smooth" });
-                    element.classList.add("ring-2", "ring-primary");
-                    setTimeout(() => element.classList.remove("ring-2", "ring-primary"), 3000);
-                  }
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-bold text-base text-foreground leading-tight tracking-tight">
+                Complainant Portal
+              </h1>
+              <Badge variant="secondary" className="text-[11px] font-mono font-medium px-2 py-0.5 rounded-full">
+                Public Gateway
+              </Badge>
+            </div>
+            <span className="text-xs text-muted-foreground font-mono">/org/{slug} (Grievances)</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/org/${slug}/staff/dashboard`)}
+            className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground h-8 rounded-xl cursor-pointer"
+          >
+            <Layers className="w-3.5 h-3.5 text-primary" />
+            <span>Staff Cockpit</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/org/${slug}/admin/dashboard`)}
+            className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground h-8 rounded-xl cursor-pointer"
+          >
+            <Shield className="w-3.5 h-3.5 text-primary" />
+            <span>Admin Console</span>
+          </Button>
+
+          <NotificationCenter
+            slug={slug || ""}
+            onRealtimeEvent={() => {
+              loadData();
+            }}
+            onNotificationClick={(notif) => {
+              if (notif.complaintId) {
+                const element = document.getElementById(`complaint-${notif.complaintId}`);
+                if (element) {
+                  element.scrollIntoView({ behavior: "smooth" });
+                  element.classList.add("border-primary");
+                  setTimeout(() => element.classList.remove("border-primary"), 3000);
                 }
-              }}
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="flex items-center gap-2 text-xs font-semibold h-9 rounded-xl"
-            >
-              <LogOut className="size-3.5 text-muted-foreground" />
-              <span>Sign Out</span>
-            </Button>
-          </div>
+              }
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="flex items-center space-x-1.5 text-xs text-muted-foreground hover:text-destructive px-3 py-1.5 rounded-xl h-auto cursor-pointer"
+            title="Sign out of Complainant Portal"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Sign Out</span>
+          </Button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full flex flex-col gap-6">
+      <main className="max-w-7xl mx-auto p-6 flex-1 w-full flex flex-col gap-6">
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="rounded-xl">
             <AlertCircle className="size-4" />
             <AlertDescription className="text-xs font-medium">
               {error}
@@ -260,7 +284,7 @@ export function ComplainantPortal() {
         )}
 
         {successMsg && (
-          <Alert className="border-emerald-500/30 text-emerald-500">
+          <Alert className="border-emerald-500/30 text-emerald-500 rounded-xl bg-card">
             <CheckCircle2 className="size-4 text-emerald-500" />
             <AlertDescription className="text-xs font-medium">
               {successMsg}
@@ -271,7 +295,7 @@ export function ComplainantPortal() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Complaint Submission Composer */}
           <div className="lg:col-span-5">
-            <Card className="rounded-2xl shadow-lg sticky top-24">
+            <Card className="rounded-2xl shadow-xs border-border bg-card sticky top-24">
               <CardHeader className="p-6 pb-4">
                 <div className="flex items-center gap-2 mb-1">
                   <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary">
@@ -319,7 +343,7 @@ export function ComplainantPortal() {
                                 onClick={() =>
                                   setFormData((prev) => ({ ...prev, categoryId: cat.id }))
                                 }
-                                className="h-8 px-3 text-xs font-medium rounded-lg"
+                                className="h-8 px-3 text-xs font-medium rounded-lg cursor-pointer"
                               >
                                 {cat.name}
                                 <span className="ml-1 text-[10px] opacity-70 font-mono">
@@ -339,7 +363,7 @@ export function ComplainantPortal() {
                             onChange={(e) =>
                               setFormData({ ...formData, categoryId: e.target.value })
                             }
-                            className="w-full bg-background border border-input rounded-xl px-3.5 py-2 text-xs text-foreground appearance-none focus-ring pr-9 font-mono"
+                            className="w-full bg-card border border-input rounded-xl px-3.5 py-2 text-xs text-foreground appearance-none focus:outline-none focus:border-primary pr-9 font-mono"
                           >
                             {categories.map((category) => (
                               <option key={category.id} value={category.id}>
@@ -469,7 +493,7 @@ export function ComplainantPortal() {
 
                     {/* Visual Thumbnail Preview */}
                     {formData.photoUrl && (
-                      <div className="mt-1 p-2 rounded-xl bg-muted/40 border border-border flex items-center justify-between gap-3">
+                      <div className="mt-1 p-2.5 rounded-xl bg-muted/40 border border-border flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <img
                             src={formData.photoUrl}
@@ -494,7 +518,7 @@ export function ComplainantPortal() {
                           size="icon"
                           onClick={() => setFormData((prev) => ({ ...prev, photoUrl: "" }))}
                           aria-label="Remove photo"
-                          className="size-7 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          className="size-7 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                         >
                           <X className="size-4" />
                         </Button>
@@ -505,7 +529,7 @@ export function ComplainantPortal() {
                   <Button
                     type="submit"
                     disabled={submitting || categories.length === 0}
-                    className="w-full h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 mt-1"
+                    className="w-full h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 mt-1 cursor-pointer"
                   >
                     <PlusCircle className="size-4" />
                     <span>{submitting ? "Submitting..." : "Submit Complaint"}</span>
@@ -519,7 +543,7 @@ export function ComplainantPortal() {
           <div className="lg:col-span-7 flex flex-col gap-6">
             {/* Top-Level High-Priority 24-Hour Resolution Verification Banner */}
             {pendingVerificationComplaints.length > 0 && (
-              <Card className="border-2 border-primary/40 shadow-sm rounded-2xl bg-card">
+              <Card className="border-2 border-primary/50 shadow-sm rounded-2xl bg-card">
                 <CardHeader className="p-5 pb-3">
                   <div className="flex items-start gap-3">
                     <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 text-primary flex-shrink-0 mt-0.5">
@@ -584,7 +608,7 @@ export function ComplainantPortal() {
                             })
                           }
                           placeholder="Optional explanation of why the issue is still not fixed..."
-                          className="h-9 text-xs"
+                          className="h-9 text-xs rounded-xl"
                         />
 
                         <div className="flex flex-wrap items-center gap-2">
@@ -592,7 +616,7 @@ export function ComplainantPortal() {
                             type="button"
                             onClick={() => handleConfirmResolution(pendingComplaint.incidentId)}
                             disabled={actionLoading}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 h-8 text-xs font-semibold"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 h-8 text-xs font-semibold rounded-xl cursor-pointer"
                           >
                             <CheckCircle2 className="size-3.5" />
                             <span>Yes, Verified</span>
@@ -603,7 +627,7 @@ export function ComplainantPortal() {
                             onClick={() => handleContest(pendingComplaint.incidentId)}
                             disabled={actionLoading}
                             variant="destructive"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 h-8 text-xs font-semibold"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 h-8 text-xs font-semibold rounded-xl cursor-pointer"
                           >
                             <AlertCircle className="size-3.5" />
                             <span>Still Not Fixed</span>
@@ -617,7 +641,7 @@ export function ComplainantPortal() {
             )}
 
             {/* Complaints Feed Header */}
-            <div className="flex items-center justify-between border-b pb-3">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
                 <h2 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
                   My Personal Complaints
@@ -634,9 +658,9 @@ export function ComplainantPortal() {
             </div>
 
             {complaints.length === 0 ? (
-              <Card className="rounded-2xl p-12 text-center shadow-xs">
+              <Card className="rounded-2xl p-12 text-center shadow-xs border-border bg-card">
                 <CardContent className="flex flex-col items-center gap-3 p-0">
-                  <div className="p-3 rounded-2xl bg-muted border text-muted-foreground inline-block">
+                  <div className="p-3 rounded-2xl bg-muted border border-border text-muted-foreground inline-block">
                     <FileText className="size-8" />
                   </div>
                   <h3 className="text-base font-semibold text-foreground">
@@ -657,7 +681,7 @@ export function ComplainantPortal() {
                     <Card
                       key={complaint.id}
                       id={`complaint-${complaint.id}`}
-                      className="rounded-2xl shadow-xs transition-all duration-200"
+                      className="rounded-2xl shadow-xs border-border bg-card transition-all duration-200 hover:border-border/80"
                     >
                       {/* Card Header: Title, Category, Status & Escalation Tier */}
                       <CardHeader className="p-5 pb-3">
@@ -667,7 +691,7 @@ export function ComplainantPortal() {
                               {complaint.title}
                             </CardTitle>
                             <div className="flex flex-wrap items-center gap-2">
-                              <Badge variant="outline" className="text-[11px] px-2 py-0.5 rounded-md font-medium">
+                              <Badge variant="secondary" className="text-[11px] px-2 py-0.5 rounded-md font-medium">
                                 {complaint.categoryName || "General"}
                               </Badge>
                               <span className="text-[11px] text-muted-foreground font-mono">
@@ -720,7 +744,7 @@ export function ComplainantPortal() {
 
                         {/* Resolution Verification Grace Period Status on Card */}
                         {isResolved && (
-                          <Alert className="p-3 border-primary/30 rounded-xl text-xs">
+                          <Alert className="p-3 border-primary/30 rounded-xl text-xs bg-muted/20">
                             <AlertCircle className="size-4 text-primary flex-shrink-0" />
                             <AlertDescription className="text-xs">
                               24-Hour Verification Grace Period active. Action requested in verification panel above.

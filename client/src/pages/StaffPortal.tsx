@@ -166,37 +166,34 @@ export function StaffPortal() {
   const handleMerge = async (complaintId: string) => {
     if (!slug || !selectedIncident) return;
     setMergingComplaintId(complaintId);
+    setError(null);
     setDetailsError(null);
-
     try {
-      const result = await mergeComplaintIntoIncident(slug, selectedIncident.id, complaintId);
-      setSelectedIncident(result.incident);
-      setAttachedComplaints(result.complaints);
+      const res = await mergeComplaintIntoIncident(slug, selectedIncident.id, complaintId);
+      setSelectedIncident(res.incident);
+      setAttachedComplaints(res.complaints);
       setActionSuccess(
-        "Corroborating complaint successfully merged! SLA deadline dynamically contracted."
+        `Corroborating complaint successfully merged! Complaint #${complaintId.slice(-6)} merged. Corroboration count is now ${res.incident.corroborationCount}. Dynamic SLA deadline contracted.`
       );
-      await loadIncidents();
       await fetchSuggestions(selectedIncident.id);
-      if (searchQuery.trim()) {
-        await handleSearchCandidates(searchQuery);
-      }
+      setSearchResults((prev) => prev.filter((c) => c.id !== complaintId));
+      await loadIncidents();
     } catch (err: any) {
-      setDetailsError(err.message || "Failed to merge complaint");
+      setDetailsError(err.message || "Failed to merge complaint into incident");
     } finally {
       setMergingComplaintId(null);
     }
   };
 
   const openDetails = async (incident: IncidentItem) => {
-    if (!slug) return;
     setSelectedIncident(incident);
-    setDetailsError(null);
-    setAttachedComplaints([]);
     setLoadingDetails(true);
+    setDetailsError(null);
+    setActionSuccess(null);
     setSearchQuery("");
     setSearchResults([]);
     setSelectedReassignee("");
-
+    if (!slug) return;
     try {
       const res = await getIncidentDetails(slug, incident.id);
       setSelectedIncident(res.incident);
@@ -298,13 +295,13 @@ export function StaffPortal() {
       case "Assigned":
         return "bg-amber-500/10 text-amber-400 border-amber-500/30";
       case "In Progress":
-        return "bg-indigo-500/10 text-indigo-400 border-indigo-500/30";
+        return "bg-primary/10 text-primary border-primary/30";
       case "Resolved":
-        return "bg-purple-500/10 text-purple-400 border-purple-500/30";
+        return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
       case "Closed":
-        return "bg-slate-500/10 text-slate-400 border-slate-500/30";
+        return "bg-muted text-muted-foreground border-border";
       default:
-        return "bg-slate-500/10 text-slate-400 border-slate-500/30";
+        return "bg-muted text-muted-foreground border-border";
     }
   };
 
@@ -328,7 +325,6 @@ export function StaffPortal() {
   // Calculate quick metrics
   const totalCount = incidents.length;
   const unassignedCount = incidents.filter((i) => i.status === "New").length;
-  const assignedCount = incidents.filter((i) => i.status === "Assigned").length;
   const inProgressCount = incidents.filter((i) => i.status === "In Progress").length;
   const breachedCount = incidents.filter((i) => {
     const isPast = i.slaDeadline && new Date(i.slaDeadline).getTime() < Date.now();
@@ -350,27 +346,47 @@ export function StaffPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans antialiased">
       {/* Sticky Operational Cockpit Navbar */}
-      <header className="border-b bg-card/90 backdrop-blur sticky top-0 z-30 px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-3.5">
-          <div className="bg-primary/10 border border-primary/20 text-primary p-2 rounded-xl">
-            <Layers className="size-5" />
+      <header className="border-b border-border bg-card/80 backdrop-blur sticky top-0 z-30 px-6 py-3.5 flex items-center justify-between">
+        <div className="flex items-center space-x-3.5">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-xs">
+            <Layers className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-bold tracking-tight text-foreground leading-none">
+              <h1 className="font-bold text-base text-foreground leading-tight tracking-tight">
                 Operational Incident Pool
               </h1>
-              <Badge variant="outline" className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold">
+              <Badge variant="secondary" className="text-[11px] font-mono font-medium px-2 py-0.5 rounded-full">
                 Staff Cockpit
               </Badge>
             </div>
-            <span className="text-xs text-muted-foreground font-mono">/org/{slug} (Category Pools)</span>
+            <p className="text-xs font-mono text-muted-foreground">/org/{slug} (Category Pools)</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/org/${slug}/admin/dashboard`)}
+            className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground h-8 rounded-xl cursor-pointer"
+          >
+            <Shield className="w-3.5 h-3.5 text-primary" />
+            <span>Admin Console</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/org/${slug}/submit`)}
+            className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground h-8 rounded-xl cursor-pointer"
+          >
+            <FileText className="w-3.5 h-3.5 text-primary" />
+            <span>Grievance Portal</span>
+          </Button>
+
           <NotificationCenter
             slug={slug || ""}
             onRealtimeEvent={() => {
@@ -400,21 +416,22 @@ export function StaffPortal() {
             }}
           />
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={handleLogout}
-            className="flex items-center gap-2 text-xs h-8 rounded-xl"
+            className="flex items-center space-x-1.5 text-xs text-muted-foreground hover:text-destructive px-3 py-1.5 rounded-xl h-auto cursor-pointer"
+            title="Sign out of Staff Portal"
           >
-            <LogOut className="size-3.5" />
-            <span>Sign Out</span>
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Sign Out</span>
           </Button>
         </div>
       </header>
 
       {/* Main Operational Cockpit */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1 w-full flex flex-col gap-6">
+      <main className="max-w-7xl mx-auto p-6 flex-1 w-full flex flex-col gap-6">
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="rounded-xl">
             <AlertCircle className="size-5 flex-shrink-0" />
             <AlertDescription className="text-xs sm:text-sm font-medium">
               {error}
@@ -423,7 +440,7 @@ export function StaffPortal() {
         )}
 
         {!selectedIncident && actionSuccess && (
-          <Alert className="border-emerald-500/30 text-emerald-500">
+          <Alert className="border-emerald-500/30 text-emerald-500 rounded-xl bg-card">
             <CheckCircle2 className="size-5 text-emerald-500 flex-shrink-0" />
             <AlertDescription className="text-xs sm:text-sm font-medium">
               {actionSuccess}
@@ -432,85 +449,95 @@ export function StaffPortal() {
         )}
 
         {/* Operational Pool Header & Quick Triage Metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <Card className="rounded-xl shadow-xs">
-            <CardContent className="p-3.5 flex flex-col gap-1">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <Card className="rounded-xl p-4 shadow-xs border-border bg-card">
+            <CardHeader className="p-0 pb-1 space-y-0">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
                 Total Active
               </span>
+            </CardHeader>
+            <CardContent className="p-0">
               <div className="flex items-baseline justify-between">
-                <span className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-foreground">
+                <span className="text-2xl font-bold font-mono tabular-nums text-foreground">
                   {totalCount}
                 </span>
-                <span className="text-[10px] text-muted-foreground font-mono">Pool Items</span>
+                <span className="text-[11px] text-muted-foreground font-mono">Pool Items</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl shadow-xs">
-            <CardContent className="p-3.5 flex flex-col gap-1">
-              <span className="text-[11px] font-semibold text-sky-500 uppercase tracking-wider block">
+          <Card className="rounded-xl p-4 shadow-xs border-border bg-card">
+            <CardHeader className="p-0 pb-1 space-y-0">
+              <span className="text-[10px] font-semibold text-sky-400 uppercase tracking-wider block">
                 Unassigned
               </span>
+            </CardHeader>
+            <CardContent className="p-0">
               <div className="flex items-baseline justify-between">
-                <span className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-sky-500">
+                <span className="text-2xl font-bold font-mono tabular-nums text-sky-400">
                   {unassignedCount}
                 </span>
-                <span className="text-[10px] text-sky-500/70 font-mono">Claimable</span>
+                <span className="text-[11px] text-sky-400/80 font-mono">Claimable</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl shadow-xs">
-            <CardContent className="p-3.5 flex flex-col gap-1">
-              <span className="text-[11px] font-semibold text-primary uppercase tracking-wider block">
+          <Card className="rounded-xl p-4 shadow-xs border-border bg-card">
+            <CardHeader className="p-0 pb-1 space-y-0">
+              <span className="text-[10px] font-semibold text-primary uppercase tracking-wider block">
                 In Progress
               </span>
+            </CardHeader>
+            <CardContent className="p-0">
               <div className="flex items-baseline justify-between">
-                <span className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-primary">
+                <span className="text-2xl font-bold font-mono tabular-nums text-primary">
                   {inProgressCount}
                 </span>
-                <span className="text-[10px] text-primary/70 font-mono">Active Work</span>
+                <span className="text-[11px] text-primary/80 font-mono">Active Work</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl shadow-xs">
-            <CardContent className="p-3.5 flex flex-col gap-1">
-              <span className="text-[11px] font-semibold text-destructive uppercase tracking-wider block">
+          <Card className="rounded-xl p-4 shadow-xs border-border bg-card">
+            <CardHeader className="p-0 pb-1 space-y-0">
+              <span className="text-[10px] font-semibold text-destructive uppercase tracking-wider block">
                 SLA Breached
               </span>
+            </CardHeader>
+            <CardContent className="p-0">
               <div className="flex items-baseline justify-between">
-                <span className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-destructive">
+                <span className="text-2xl font-bold font-mono tabular-nums text-destructive">
                   {breachedCount}
                 </span>
-                <span className="text-[10px] text-destructive/70 font-mono">Overdue</span>
+                <span className="text-[11px] text-destructive/80 font-mono">Overdue</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl shadow-xs col-span-2 sm:col-span-1">
-            <CardContent className="p-3.5 flex flex-col gap-1">
-              <span className="text-[11px] font-semibold text-amber-500 uppercase tracking-wider block">
+          <Card className="rounded-xl p-4 shadow-xs border-border bg-card col-span-2 sm:col-span-1">
+            <CardHeader className="p-0 pb-1 space-y-0">
+              <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider block">
                 Supervisory
               </span>
+            </CardHeader>
+            <CardContent className="p-0">
               <div className="flex items-baseline justify-between">
-                <span className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-amber-500">
+                <span className="text-2xl font-bold font-mono tabular-nums text-amber-400">
                   {escalatedCount}
                 </span>
-                <span className="text-[10px] text-amber-500/70 font-mono">Tier &ge; 1</span>
+                <span className="text-[11px] text-amber-400/80 font-mono">Tier &ge; 1</span>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Segmented Status Filter Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
-          <div className="inline-flex p-1 bg-muted border rounded-xl gap-1 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
+          <div className="inline-flex p-1 bg-muted/40 border border-border rounded-xl gap-1 flex-wrap">
             {[
               { id: "all" as IncidentFilter, label: `All (${totalCount})` },
               { id: "new" as IncidentFilter, label: `Unassigned (${unassignedCount})` },
-              { id: "assigned" as IncidentFilter, label: `Assigned (${assignedCount})` },
+              { id: "assigned" as IncidentFilter, label: `Assigned (${incidents.filter((i) => i.status === "Assigned").length})` },
               { id: "in_progress" as IncidentFilter, label: `In Progress (${inProgressCount})` },
               { id: "breached" as IncidentFilter, label: `Impending Breaches (${breachedCount})` },
               { id: "escalated" as IncidentFilter, label: `Supervisory Oversight (${escalatedCount})` },
@@ -521,14 +548,14 @@ export function StaffPortal() {
                 variant={activeFilter === tab.id ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setActiveFilter(tab.id)}
-                className="h-8 px-3 text-xs font-semibold"
+                className="h-8 px-3 text-xs font-semibold rounded-lg cursor-pointer transition-colors"
               >
                 {tab.label}
               </Button>
             ))}
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
             <Filter className="size-3.5 text-primary flex-shrink-0" />
             <span>Pre-filtered by your category pool permissions</span>
           </div>
@@ -536,7 +563,7 @@ export function StaffPortal() {
 
         {/* Incident Cards Pool Grid */}
         {filteredIncidents.length === 0 ? (
-          <Card className="rounded-xl p-12 text-center shadow-xs">
+          <Card className="rounded-2xl p-12 text-center shadow-xs border-border bg-card">
             <CardContent className="flex flex-col items-center gap-3 p-0">
               <Layers className="size-12 text-muted-foreground mx-auto" />
               <h3 className="text-base sm:text-lg font-bold text-foreground">Incident Pool Clear</h3>
@@ -546,13 +573,13 @@ export function StaffPortal() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredIncidents.map((incident) => (
               <Card
                 key={incident.id}
-                className={`rounded-xl p-5 shadow-xs flex flex-col justify-between gap-4 transition-all duration-200 hover:border-foreground/20 ${
+                className={`rounded-2xl p-5 shadow-xs flex flex-col justify-between gap-4 transition-all duration-200 border bg-card hover:border-border/80 ${
                   incident.escalationTier > 0
-                    ? "border-destructive/60"
+                    ? "border-destructive/50 bg-muted/10"
                     : "border-border"
                 }`}
               >
@@ -573,7 +600,7 @@ export function StaffPortal() {
 
                   {/* Supervisory Oversight Required Banner (when escalated) */}
                   {incident.escalationTier > 0 && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-destructive/15 border border-destructive/30 text-destructive text-xs font-semibold">
+                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-destructive/15 border border-destructive/30 text-destructive text-xs font-semibold">
                       <AlertCircle className="size-3.5 flex-shrink-0" />
                       <span>Supervisory Oversight Required (Tier {incident.escalationTier})</span>
                     </div>
@@ -581,7 +608,7 @@ export function StaffPortal() {
 
                   {/* Resolution Grace Period Badge */}
                   {incident.status === "Resolved" && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-muted border border-border text-foreground text-xs font-semibold">
+                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted border border-border text-foreground text-xs font-semibold">
                       <Clock className="size-3.5 text-muted-foreground flex-shrink-0" />
                       <span>Resolution Grace Period Active (24h)</span>
                     </div>
@@ -589,7 +616,7 @@ export function StaffPortal() {
 
                   {/* Contested Reopen Penalty Badge */}
                   {Boolean(incident.reopenCount && incident.reopenCount > 0) && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-destructive/15 border border-destructive/30 text-destructive text-xs font-semibold">
+                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-destructive/15 border border-destructive/30 text-destructive text-xs font-semibold">
                       <AlertTriangle className="size-3.5 flex-shrink-0" />
                       <span>Contested Resolution ({incident.reopenCount}x penalty)</span>
                     </div>
@@ -610,7 +637,7 @@ export function StaffPortal() {
                   </div>
 
                   {/* Corroboration Count, Assignee & Supervisor Info */}
-                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border">
                     <div>
                       Corroborations:{" "}
                       <strong className="text-foreground font-mono tabular-nums">
@@ -637,7 +664,7 @@ export function StaffPortal() {
                 </div>
 
                 {/* Quick Action Triggers & Inspect Action */}
-                <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-border">
+                <div className="flex flex-wrap items-center gap-2 mt-2 pt-3 border-t border-border">
                   {incident.status === "New" && (
                     <Button
                       type="button"
@@ -646,7 +673,7 @@ export function StaffPortal() {
                         handleClaim(incident.id);
                       }}
                       disabled={actionLoading}
-                      className="flex-1 h-9 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 pressable"
+                      className="flex-1 h-9 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <UserCheck className="size-3.5" />
                       <span>Quick Claim</span>
@@ -661,7 +688,7 @@ export function StaffPortal() {
                         handleStartWork(incident.id);
                       }}
                       disabled={actionLoading}
-                      className="flex-1 h-9 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 pressable"
+                      className="flex-1 h-9 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Play className="size-3.5" />
                       <span>Quick Start</span>
@@ -675,7 +702,7 @@ export function StaffPortal() {
                         handleResolve(incident.id);
                       }}
                       disabled={actionLoading}
-                      className="flex-1 h-9 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 pressable"
+                      className="flex-1 h-9 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <CheckCircle className="size-3.5" />
                       <span>Quick Resolve</span>
@@ -686,7 +713,7 @@ export function StaffPortal() {
                     type="button"
                     onClick={() => openDetails(incident)}
                     variant="outline"
-                    className={`h-9 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 pressable shadow-xs ${
+                    className={`h-9 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs ${
                       incident.status === "Resolved" || incident.status === "Closed"
                         ? "w-full"
                         : "flex-1"
@@ -708,16 +735,16 @@ export function StaffPortal() {
           <SheetContent
             side="right"
             showCloseButton={false}
-            className="w-full sm:max-w-5xl p-0 bg-background border-l border-border shadow-lg text-foreground flex flex-col h-full overflow-hidden"
+            className="w-full sm:max-w-5xl p-0 bg-background border-l border-border shadow-2xl text-foreground flex flex-col h-full overflow-hidden"
           >
             {/* Drawer Top Header */}
-            <SheetHeader className="p-5 border-b border-border bg-card flex flex-row items-center justify-between flex-shrink-0 space-y-0">
+            <SheetHeader className="p-6 border-b border-border bg-card flex flex-row items-center justify-between flex-shrink-0 space-y-0">
               <div>
                 <SheetTitle className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                   <span>Incident Details</span>
                   <span className="text-xs font-mono text-muted-foreground">#{selectedIncident.id}</span>
                 </SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground font-medium">
+                <SheetDescription className="text-xs text-muted-foreground font-medium mt-0.5">
                   {selectedIncident.category?.name} Pool • Tier {selectedIncident.escalationTier}
                 </SheetDescription>
               </div>
@@ -726,7 +753,7 @@ export function StaffPortal() {
                 size="icon"
                 onClick={() => setSelectedIncident(null)}
                 aria-label="Close drawer"
-                className="size-9 rounded-xl text-muted-foreground hover:text-foreground pressable"
+                className="size-9 rounded-xl text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="size-5" />
               </Button>
@@ -734,21 +761,21 @@ export function StaffPortal() {
 
             {/* Feedback Banners inside Drawer */}
             {actionSuccess && (
-              <div className="p-3.5 m-5 mb-0 bg-primary/10 border border-primary/20 rounded-xl flex items-start gap-2 text-xs text-foreground font-medium animate-in fade-in">
+              <div className="p-3.5 m-6 mb-0 bg-primary/10 border border-primary/20 rounded-xl flex items-start gap-2 text-xs text-foreground font-medium animate-in fade-in">
                 <CheckCircle2 className="size-4 mt-0.5 flex-shrink-0 text-primary" />
                 <span>{actionSuccess}</span>
               </div>
             )}
 
             {detailsError && (
-              <div className="p-3.5 m-5 mb-0 bg-destructive/15 border border-destructive/30 rounded-xl flex items-start gap-2 text-xs text-destructive font-medium animate-in fade-in">
+              <div className="p-3.5 m-6 mb-0 bg-destructive/15 border border-destructive/30 rounded-xl flex items-start gap-2 text-xs text-destructive font-medium animate-in fade-in">
                 <AlertCircle className="size-4 mt-0.5 flex-shrink-0 text-destructive" />
                 <span>{detailsError}</span>
               </div>
             )}
 
             {/* Supervisory Oversight Banner & Dual Accountability */}
-            <div className="p-5 pb-0 flex flex-col gap-4 flex-shrink-0">
+            <div className="p-6 pb-0 flex flex-col gap-4 flex-shrink-0">
               {selectedIncident.escalationTier > 0 && (
                 <div className="p-4 rounded-xl bg-destructive/15 border border-destructive/30 flex items-start gap-3">
                   <AlertCircle className="size-5 text-destructive mt-0.5 flex-shrink-0" />
@@ -769,7 +796,7 @@ export function StaffPortal() {
               )}
 
               {/* Status & SLA Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                 <div className="bg-card p-3 rounded-xl border border-border">
                   <div className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">Status</div>
                   <div className="text-xs sm:text-sm font-bold text-foreground mt-1">{selectedIncident.status}</div>
@@ -826,10 +853,10 @@ export function StaffPortal() {
 
               {/* Supervisory Reassignment Control (when escalated) */}
               {selectedIncident.escalationTier > 0 && availableStaff.length > 0 && (
-                <div className="p-3.5 bg-muted/60 border border-border rounded-xl flex flex-col gap-2">
+                <div className="p-4 bg-muted/40 border border-border rounded-xl flex flex-col gap-2.5">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-foreground flex items-center gap-1.5">
-                      <UserCheck className="size-3.5" />
+                      <UserCheck className="size-3.5 text-primary" />
                       <span>Supervisory Reassignment</span>
                     </span>
                     <span className="text-[11px] text-muted-foreground">Reassign stalled work to active staff</span>
@@ -843,7 +870,7 @@ export function StaffPortal() {
                       value={selectedReassignee}
                       onChange={(e) => setSelectedReassignee(e.target.value)}
                       aria-label="Reassign to Staff Member"
-                      className="flex-1 bg-background border border-input text-foreground rounded-lg px-3 py-1.5 text-xs focus-ring"
+                      className="flex-1 bg-card border border-input text-foreground rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-primary"
                     >
                       <option value="">Select staff member to reassign...</option>
                       {availableStaff.map((s) => (
@@ -856,7 +883,7 @@ export function StaffPortal() {
                       type="button"
                       onClick={() => handleReassign(selectedIncident.id)}
                       disabled={!selectedReassignee || reassignLoading}
-                      className="px-3.5 py-1.5 h-8 text-xs font-semibold pressable"
+                      className="px-4 py-2 h-9 text-xs font-semibold rounded-xl cursor-pointer"
                     >
                       {reassignLoading ? "Reassigning..." : "Reassign"}
                     </Button>
@@ -866,7 +893,7 @@ export function StaffPortal() {
             </div>
 
             {/* Split-Pane Scrollable Inspection Content */}
-            <div className="p-5 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-y-auto flex-1">
+            <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-y-auto flex-1">
               {/* Left Pane: SLA Contraction Timeline & Attached Complaints Gallery */}
               <div className="lg:col-span-7 flex flex-col gap-6">
                 {/* SLA Contraction Audit Timeline */}
@@ -942,7 +969,7 @@ export function StaffPortal() {
               {/* Right Pane: Suggested Corroborations & Manual Merging Station */}
               <div className="lg:col-span-5 flex flex-col gap-6">
                 {/* Suggested Corroborations Section */}
-                <Card className="rounded-xl border-border">
+                <Card className="rounded-xl border-border bg-card">
                   <CardHeader className="p-4 pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-bold text-foreground flex items-center gap-1.5">
@@ -961,7 +988,7 @@ export function StaffPortal() {
                         Computing token similarity...
                       </div>
                     ) : suggestions.length === 0 ? (
-                      <div className="p-3.5 bg-muted border border-border rounded-xl text-xs text-muted-foreground italic">
+                      <div className="p-3.5 bg-muted/40 border border-border rounded-xl text-xs text-muted-foreground italic">
                         No similar open complaints detected for this category.
                       </div>
                     ) : (
@@ -1015,7 +1042,7 @@ export function StaffPortal() {
                                   type="button"
                                   onClick={() => handleMerge(complaint.id)}
                                   disabled={mergingComplaintId === complaint.id}
-                                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 h-8 text-xs font-semibold pressable"
+                                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 h-8 text-xs font-semibold rounded-lg cursor-pointer"
                                 >
                                   <GitMerge className="size-3.5" />
                                   <span>
@@ -1034,7 +1061,7 @@ export function StaffPortal() {
                 </Card>
 
                 {/* Manual Search & Merge Section */}
-                <Card className="rounded-xl border-border">
+                <Card className="rounded-xl border-border bg-card">
                   <CardHeader className="p-4 pb-2">
                     <CardTitle className="text-sm font-bold text-foreground flex items-center gap-1.5">
                       <Search className="size-4 text-primary" />
@@ -1049,7 +1076,7 @@ export function StaffPortal() {
                         placeholder="Search open complaints in this category to merge..."
                         value={searchQuery}
                         onChange={(e) => handleSearchCandidates(e.target.value)}
-                        className="w-full pl-9 text-xs font-mono h-9"
+                        className="w-full pl-9 text-xs font-mono h-9 rounded-lg"
                       />
                       <Search className="size-4 text-muted-foreground absolute left-3 top-2.5 pointer-events-none" />
                     </div>
@@ -1080,7 +1107,7 @@ export function StaffPortal() {
                               type="button"
                               onClick={() => handleMerge(candidateComplaint.id)}
                               disabled={mergingComplaintId === candidateComplaint.id}
-                              className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 h-7 text-xs font-semibold pressable"
+                              className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 h-7 text-xs font-semibold rounded-lg cursor-pointer"
                             >
                               <GitMerge className="size-3.5" />
                               <span>{mergingComplaintId === candidateComplaint.id ? "Merging..." : "Merge"}</span>
@@ -1100,7 +1127,7 @@ export function StaffPortal() {
                 type="button"
                 variant="outline"
                 onClick={() => setSelectedIncident(null)}
-                className="px-4 py-2 h-9 rounded-xl text-xs pressable"
+                className="px-4 py-2 h-9 rounded-xl text-xs cursor-pointer"
               >
                 Close
               </Button>
@@ -1110,7 +1137,7 @@ export function StaffPortal() {
                   <Button
                     onClick={() => handleClaim(selectedIncident.id)}
                     disabled={actionLoading}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 h-10 rounded-xl font-semibold text-xs pressable"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 h-10 rounded-xl font-semibold text-xs cursor-pointer"
                   >
                     <UserCheck className="size-4" />
                     <span>{actionLoading ? "Claiming..." : "Claim Incident"}</span>
@@ -1121,7 +1148,7 @@ export function StaffPortal() {
                   <Button
                     onClick={() => handleStartWork(selectedIncident.id)}
                     disabled={actionLoading}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 h-10 rounded-xl font-semibold text-xs pressable"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 h-10 rounded-xl font-semibold text-xs cursor-pointer"
                   >
                     <Play className="size-4" />
                     <span>{actionLoading ? "Updating..." : "Start Work (In Progress)"}</span>
@@ -1136,7 +1163,7 @@ export function StaffPortal() {
                     <Button
                       onClick={() => handleResolve(selectedIncident.id)}
                       disabled={actionLoading}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 h-10 rounded-xl font-semibold text-xs pressable"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 h-10 rounded-xl font-semibold text-xs cursor-pointer"
                     >
                       <CheckCircle className="size-4" />
                       <span>{actionLoading ? "Resolving..." : "Mark as Resolved"}</span>
