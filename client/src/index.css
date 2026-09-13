@@ -27,15 +27,19 @@
     line-height: 1.625;
   }
 
-  /* Base interactive focus indicator standards */
+  /* Base interactive focus indicator standards - remove default browser outlines */
+  button:focus,
   button:focus-visible,
+  input:focus,
   input:focus-visible,
+  select:focus,
   select:focus-visible,
+  textarea:focus,
   textarea:focus-visible,
+  a:focus,
   a:focus-visible {
-    outline: 2px solid transparent;
-    outline-offset: 2px;
-    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+    outline: none !important;
+    box-shadow: none;
   }
   .theme {
     --font-heading: var(--font-sans);
@@ -111,19 +115,30 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
   }
-  * {
+  *,
+  *::before,
+  *::after {
     border-color: var(--border);
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
   }
+
+  *:focus,
+  *:focus-visible {
+    outline: none !important;
+  }
+
   html {
     font-family: var(--font-sans);
   }
 }
 
 @layer utilities {
+  .focus-ring,
+  .focus-ring:focus,
   .focus-ring:focus-visible {
-    outline: 2px solid transparent;
-    outline-offset: 2px;
-    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+    outline: none !important;
+    box-shadow: none !important;
   }
 
   .pressable {
